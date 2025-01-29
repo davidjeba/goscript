@@ -3,7 +3,6 @@ package goscript
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 )
 
