@@ -5,9 +5,9 @@ import (
 )
 
 func Home(props goscript.Props) string {
-	return goscript.createElement("div", nil,
-		goscript.createElement("h1", nil, "Welcome to GoScript"),
-		goscript.createElement("p", nil, "This is the home component."),
+	return goscript.CreateElement("div", nil,
+		goscript.CreateElement("h1", nil, "Welcome to GoScript"),
+		goscript.CreateElement("p", nil, "This is the home component."),
 	)
 }
 
