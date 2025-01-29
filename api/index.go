@@ -20,13 +20,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	ssrEngine := goscript.NewSSREngine(goscript.GlobalStore)
-	html, err := ssrEngine.RenderToString(goscript.FunctionalComponent(components.Home))
-	if err != nil {
-		http.Error(w, "Error rendering page", http.StatusInternalServerError)
-		return
-	}
-
+	html := components.Home(nil)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
 }
