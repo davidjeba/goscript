@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/davidjeba/goscript/pkg/goscript"
+	"github.com/davidjeba/goscript/pkg/components"
 )
 
 func main() {
@@ -22,7 +23,9 @@ func main() {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	fmt.Fprintf(w, "Welcome to GoScript!")
+	html := components.Home(nil)
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(html))
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request, params map[string]string) {
