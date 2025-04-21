@@ -2,6 +2,13 @@
 
 GoScript is a full-stack web development framework written in Go, designed to provide a complete solution for building modern web, mobile, and AR/VR applications. It combines the performance of Go with the flexibility of modern web technologies, offering a unified approach to frontend, backend, and database development.
 
+[![GitHub stars](https://img.shields.io/github/stars/davidjeba/goscript?style=social)](https://github.com/davidjeba/goscript/stargazers)
+[![GitHub license](https://img.shields.io/github/license/davidjeba/goscript)](https://github.com/davidjeba/goscript/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/davidjeba/goscript)](https://goreportcard.com/report/github.com/davidjeba/goscript)
+[![GoDoc](https://godoc.org/github.com/davidjeba/goscript?status.svg)](https://godoc.org/github.com/davidjeba/goscript)
+
+GoScript aims to be the most comprehensive Go-based web development framework, combining the best features of modern web frameworks with the performance and type safety of Go. It provides a complete solution for building web applications, from frontend to backend, with built-in support for CSS, 3D rendering, API development, database integration, and performance monitoring.
+
 ## 🌟 Core Components
 
 GoScript consists of several integrated components that work together to provide a complete development experience:
