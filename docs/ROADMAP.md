@@ -31,14 +31,15 @@ GoSky will be our comprehensive rendering solution that prioritizes performance 
 - Time to Interactive (TTI) < 2s
 - Hydration completion < 100ms
 
-### 2. GoConnect - Backend Integration System
+### 2. GoConnect - Advanced Authentication and Authorization System
 
-GoConnect will provide standardized, high-performance connectors to popular backend frameworks.
+GoConnect will provide a comprehensive authentication and authorization system with granular access control and multiple authentication methods.
 
 **Features:**
-- **Plugin Framework** - Extensible system for backend framework integration
-- **Framework-specific Adapters** - Optimized connectors for Django, WordPress, Beego, etc.
-- **Authentication System** - Comprehensive auth with granular RBAC
+- **Authentication System** - Support for multiple authentication methods (JWT, OAuth, etc.)
+- **Framework Integration Adapters** - Seamless integration with popular backend frameworks
+- **Multi-factor Authentication** - Comprehensive MFA support
+- **Access Control System** - Granular RBAC with dynamic capabilities
 - **Security Layer** - Built-in protection against common vulnerabilities
 
 **Authentication & Access Control:**
@@ -53,12 +54,12 @@ GoConnect will provide standardized, high-performance connectors to popular back
 - Anomaly detection and prevention
 
 **Implementation Priority:**
-1. Plugin framework architecture
-2. Django integration adapter
-3. WordPress integration adapter
-4. Beego integration adapter
-5. Core authentication system
-6. Advanced RBAC implementation
+1. Core authentication system
+2. Framework integration adapters
+3. Multi-factor authentication
+4. Basic RBAC implementation
+5. Advanced access control features
+6. Security layer implementation
 
 ### 3. GoStore - State Management System
 
@@ -80,22 +81,42 @@ GoStore will provide a high-performance state management solution optimized for 
 5. Optimistic updates
 6. State persistence
 
-### 4. GOPM Enhancements - Development Tools
+### 4. GoBuild - High-Performance Build System
+
+GoBuild will provide a next-generation build system designed specifically for GoScript applications.
+
+**Features:**
+- **Zero-Configuration Builds** - Works out of the box with sensible defaults
+- **Parallel Processing** - Leverages Go's concurrency for faster builds
+- **Incremental Builds** - Only rebuilds what has changed
+- **Advanced Optimization** - Multiple optimization levels with fine-grained control
+- **Smart Bundling** - Intelligent bundling strategies for optimal loading
+- **Asset Processing** - Comprehensive asset optimization pipeline
+- **Development Server** - Integrated server with hot module replacement
+
+**Implementation Priority:**
+1. Core build system architecture
+2. Development server with HMR
+3. Incremental build system
+4. Asset processing pipeline
+5. Advanced optimization features
+6. Build analysis tools
+
+### 5. GOPM Enhancements - Development Tools
 
 Enhance GOPM to provide a superior developer experience for frontend development.
 
 **Features:**
 - **Project Scaffolding** - Templates for different project types
-- **Hot Module Replacement** - Fast development feedback loop
-- **Build Optimization** - Production build optimization
-- **Development Server** - Integrated development server
+- **Package Management** - Dependency management for GoScript projects
+- **Command Line Interface** - Unified CLI for all GoScript tools
 - **Testing Utilities** - Comprehensive testing framework
 - **Performance Monitoring** - Built-in performance metrics
 
 **Implementation Priority:**
 1. Enhanced project scaffolding
-2. Development server with HMR
-3. Build optimization tools
+2. Package management system
+3. Unified CLI architecture
 4. Testing framework integration
 5. Performance monitoring tools
 
@@ -117,21 +138,25 @@ While not part of the initial focus, GoSkin will be developed as a separate but 
 ### Phase 1 (Q2-Q3 2025)
 - GOPM Enhancements
 - GoStore core implementation
-- GoConnect plugin framework architecture
+- GoConnect core authentication system
+- GoBuild core architecture
 
 ### Phase 2 (Q3-Q4 2025)
 - GoSky SSR and hydration
 - GoStore form handling and validation
-- GoConnect Django and WordPress adapters
+- GoConnect framework integration adapters
+- GoBuild development server with HMR
 
 ### Phase 3 (Q1-Q2 2026)
 - GoSky edge and streaming rendering
-- GoConnect authentication system
+- GoConnect multi-factor authentication
 - GoStore optimistic updates
+- GoBuild incremental build system
 
 ### Phase 4 (Q2-Q3 2026)
 - GoSky WASM and ISR
 - GoConnect advanced RBAC
+- GoBuild advanced optimization features
 - Initial GoSkin planning
 
 ## Success Metrics
