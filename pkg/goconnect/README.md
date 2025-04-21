@@ -1,98 +1,130 @@
-# GoConnect: Backend Integration System for GoScript
+# GoConnect: Advanced Authentication and Authorization System for GoScript
 
-GoConnect provides a high-performance, secure integration layer between GoScript frontend applications and various backend frameworks. It offers optimized connectors for popular backend systems like Django, WordPress, and Beego, with a focus on security and performance.
+GoConnect provides a high-performance, secure authentication and authorization system for GoScript applications. It offers comprehensive security features with granular access control, multiple authentication methods, and seamless integration with various backend frameworks.
 
 ## Core Features
 
-### Plugin Framework
+### Comprehensive Authentication System
 
-GoConnect's extensible plugin system allows for seamless integration with any backend framework.
+GoConnect provides a unified authentication system with support for multiple authentication methods.
 
 ```go
-// Register a backend plugin
-goconnect.RegisterBackend("django", &goconnect.BackendPlugin{
+// Configure authentication
+auth := goconnect.New(goconnect.Options{
+    Providers: []goconnect.AuthProvider{
+        goconnect.JWTProvider{
+            TokenStorage: goconnect.LocalStorage,
+            TokenKey: "auth_token",
+            RefreshTokenKey: "refresh_token",
+            AutoRefresh: true,
+        },
+        goconnect.OAuth2Provider{
+            ClientID: "client_id",
+            AuthorizationEndpoint: "https://auth.example.com/oauth/authorize",
+            TokenEndpoint: "https://auth.example.com/oauth/token",
+            RedirectURI: "https://myapp.com/callback",
+            Scope: "profile email",
+        },
+        goconnect.CookieProvider{
+            CookieName: "session_id",
+            Secure: true,
+            HttpOnly: true,
+        },
+    },
+})
+
+// Login with different providers
+user, err := auth.Login("jwt", map[string]interface{}{
+    "username": "johndoe",
+    "password": "password123",
+})
+
+// Check authentication status
+if auth.IsAuthenticated() {
+    // User is authenticated
+    currentUser := auth.GetCurrentUser()
+}
+
+// Logout
+auth.Logout()
+```
+
+### Framework Integration Adapters
+
+Seamless integration with popular backend frameworks for authentication.
+
+```go
+// Register a backend adapter
+goconnect.RegisterAdapter("django", &goconnect.AuthAdapter{
     Name: "Django",
     Version: "1.0.0",
     Initialize: func(config map[string]interface{}) error {
         // Initialize Django-specific configuration
         return nil
     },
-    Adapters: map[string]goconnect.Adapter{
-        "rest": djangoRestAdapter,
-        "auth": djangoAuthAdapter,
-        "forms": djangoFormsAdapter,
+    LoginEndpoint: "/api/login/",
+    LogoutEndpoint: "/api/logout/",
+    RefreshEndpoint: "/api/token/refresh/",
+    UserInfoEndpoint: "/api/user/",
+    CSRFTokenName: "csrftoken",
+})
+
+// Use the adapter
+auth := goconnect.New(goconnect.Options{
+    Adapter: "django",
+    BaseURL: "https://api.example.com",
+})
+
+// Authentication is now handled using Django's authentication system
+user, err := auth.Login(map[string]interface{}{
+    "username": "johndoe",
+    "password": "password123",
+})
+```
+
+### Multi-factor Authentication
+
+Comprehensive MFA support with various authentication factors.
+
+```go
+// Configure MFA
+auth := goconnect.New(goconnect.Options{
+    MFA: goconnect.MFAOptions{
+        Enabled: true,
+        Factors: []goconnect.MFAFactor{
+            goconnect.TOTPFactor{
+                Issuer: "MyApp",
+                Digits: 6,
+                Period: 30,
+            },
+            goconnect.SMSFactor{
+                Provider: "twilio",
+                From: "+15551234567",
+            },
+            goconnect.EmailFactor{},
+            goconnect.PushFactor{},
+            goconnect.BiometricFactor{},
+        },
+        RequiredFactors: 2,
     },
 })
 
-// Use the plugin
-client := goconnect.New("django", map[string]interface{}{
-    "baseURL": "https://api.example.com",
-    "csrfTokenName": "csrftoken",
-})
-```
+// Enroll in MFA
+secret, qrCodeURL, err := auth.EnrollMFA("totp")
 
-### Framework-specific Adapters
+// Verify MFA
+verified, err := auth.VerifyMFA("totp", "123456")
 
-Optimized connectors for popular backend frameworks with framework-specific features.
-
-#### Django Integration
-
-```go
-// Django REST API integration
-response, err := client.API().Get("/api/users/", map[string]interface{}{
-    "active": true,
-    "role": "admin",
-})
-
-// Django form submission with CSRF protection
-success, errors := client.Forms().Submit("contact", map[string]interface{}{
-    "name": "John Doe",
-    "email": "john@example.com",
-    "message": "Hello, world!",
-})
-
-// Django authentication
-user, err := client.Auth().Login("username", "password")
-```
-
-#### WordPress Integration
-
-```go
-// WordPress REST API integration
-posts, err := client.API().Get("/wp-json/wp/v2/posts", map[string]interface{}{
-    "per_page": 10,
-    "categories": 5,
-})
-
-// WordPress form submission
-success, errors := client.Forms().Submit("comment", map[string]interface{}{
-    "post_id": 123,
-    "author": "John Doe",
-    "email": "john@example.com",
-    "content": "Great article!",
-})
-
-// WordPress authentication
-user, err := client.Auth().Login("username", "password")
-```
-
-#### Beego Integration
-
-```go
-// Beego API integration
-response, err := client.API().Get("/api/v1/users", map[string]interface{}{
-    "active": true,
-})
-
-// Beego form submission
-success, errors := client.Forms().Submit("registration", map[string]interface{}{
+// Login with MFA
+user, mfaRequired, err := auth.Login(map[string]interface{}{
     "username": "johndoe",
-    "email": "john@example.com",
-    "password": "securepassword",
+    "password": "password123",
 })
 
-// Beego authentication
-user, err := client.Auth().Login("username", "password")
+if mfaRequired {
+    // Complete MFA verification
+    user, err = auth.CompleteMFA("totp", "123456")
+}
 ```
 
 ### Authentication System
