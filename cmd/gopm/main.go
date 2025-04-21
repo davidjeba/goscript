@@ -51,7 +51,7 @@ func main() {
         case "prune":
                 pm.Prune(args)
         case "config":
-                pm.Config(args)
+                pm.ConfigCmd(args)
         case "help":
                 pm.Help(args)
         case "auth":
