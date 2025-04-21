@@ -1,160 +1,165 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"strings"
+        "fmt"
+        "os"
+        "strings"
 
-	"github.com/davidjeba/goscript/pkg/gopm"
+        "github.com/davidjeba/goscript/cmd/gopm/commands"
+        "github.com/davidjeba/goscript/pkg/gopm"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printHelp()
-		os.Exit(1)
-	}
+        if len(os.Args) < 2 {
+                printHelp()
+                os.Exit(1)
+        }
 
-	command := os.Args[1]
-	args := os.Args[2:]
+        command := os.Args[1]
+        args := os.Args[2:]
 
-	pm := gopm.NewPackageManager()
+        pm := gopm.NewPackageManager()
 
-	switch command {
-	// Basic package management
-	case "get":
-		pm.Get(args)
-	case "update":
-		pm.Update(args)
-	case "clean":
-		pm.Clean(args)
-	case "run":
-		pm.Run(args)
-	case "audit":
-		pm.Audit(args)
-	case "publish":
-		pm.Publish(args)
-	case "version":
-		pm.Version(args)
-	case "cache-clear":
-		pm.CacheClear(args)
-	case "list":
-		pm.List(args)
-	case "verify":
-		pm.Verify(args)
-	case "dedupe":
-		pm.Dedupe(args)
-	case "prune":
-		pm.Prune(args)
-	case "config":
-		pm.Config(args)
-	case "help":
-		pm.Help(args)
-	case "auth":
-		pm.Auth(args)
-	case "setup":
-		pm.Setup(args)
-	case "sync":
-		pm.Sync(args)
-	case "doctor":
-		pm.Doctor(args)
-	case "migrate":
-		pm.Migrate(args)
-	case "rollback":
-		pm.Rollback(args)
+        switch command {
+        // Jetpack commands
+        case "jetpack":
+                commands.JetpackCommand(args)
+                return
+        // Basic package management
+        case "get":
+                pm.Get(args)
+        case "update":
+                pm.Update(args)
+        case "clean":
+                pm.Clean(args)
+        case "run":
+                pm.Run(args)
+        case "audit":
+                pm.Audit(args)
+        case "publish":
+                pm.Publish(args)
+        case "version":
+                pm.Version(args)
+        case "cache-clear":
+                pm.CacheClear(args)
+        case "list":
+                pm.List(args)
+        case "verify":
+                pm.Verify(args)
+        case "dedupe":
+                pm.Dedupe(args)
+        case "prune":
+                pm.Prune(args)
+        case "config":
+                pm.Config(args)
+        case "help":
+                pm.Help(args)
+        case "auth":
+                pm.Auth(args)
+        case "setup":
+                pm.Setup(args)
+        case "sync":
+                pm.Sync(args)
+        case "doctor":
+                pm.Doctor(args)
+        case "migrate":
+                pm.Migrate(args)
+        case "rollback":
+                pm.Rollback(args)
 
-	// Gocsx CSS framework commands
-	case "css:build":
-		pm.CSSBuild(args)
-	case "css:watch":
-		pm.CSSWatch(args)
-	case "css:optimize":
-		pm.CSSOptimize(args)
-	case "css:analyze":
-		pm.CSSAnalyze(args)
-	case "css:theme":
-		pm.CSSTheme(args)
+        // Gocsx CSS framework commands
+        case "css:build":
+                pm.CSSBuild(args)
+        case "css:watch":
+                pm.CSSWatch(args)
+        case "css:optimize":
+                pm.CSSOptimize(args)
+        case "css:analyze":
+                pm.CSSAnalyze(args)
+        case "css:theme":
+                pm.CSSTheme(args)
 
-	// WebGPU and 3D commands
-	case "webgpu:init":
-		pm.WebGPUInit(args)
-	case "webgpu:build":
-		pm.WebGPUBuild(args)
-	case "webgpu:optimize":
-		pm.WebGPUOptimize(args)
-	case "3d:scene":
-		pm.Scene3DCreate(args)
-	case "3d:model":
-		pm.Model3DImport(args)
-	case "3d:export":
-		pm.Model3DExport(args)
-	case "3d:optimize":
-		pm.Model3DOptimize(args)
-	case "3d:convert":
-		pm.Model3DConvert(args)
+        // WebGPU and 3D commands
+        case "webgpu:init":
+                pm.WebGPUInit(args)
+        case "webgpu:build":
+                pm.WebGPUBuild(args)
+        case "webgpu:optimize":
+                pm.WebGPUOptimize(args)
+        case "3d:scene":
+                pm.Scene3DCreate(args)
+        case "3d:model":
+                pm.Model3DImport(args)
+        case "3d:export":
+                pm.Model3DExport(args)
+        case "3d:optimize":
+                pm.Model3DOptimize(args)
+        case "3d:convert":
+                pm.Model3DConvert(args)
 
-	// 2D Canvas commands
-	case "2d:init":
-		pm.Canvas2DInit(args)
-	case "2d:sprite":
-		pm.SpriteCreate(args)
-	case "2d:animation":
-		pm.AnimationCreate(args)
-	case "2d:atlas":
-		pm.AtlasCreate(args)
-	case "2d:optimize":
-		pm.Canvas2DOptimize(args)
+        // 2D Canvas commands
+        case "2d:init":
+                pm.Canvas2DInit(args)
+        case "2d:sprite":
+                pm.SpriteCreate(args)
+        case "2d:animation":
+                pm.AnimationCreate(args)
+        case "2d:atlas":
+                pm.AtlasCreate(args)
+        case "2d:optimize":
+                pm.Canvas2DOptimize(args)
 
-	// GoUIX commands
-	case "uix:init":
-		pm.UIXInit(args)
-	case "uix:component":
-		pm.UIXComponentCreate(args)
-	case "uix:test":
-		pm.UIXTest(args)
-	case "uix:storybook":
-		pm.UIXStorybook(args)
-	case "uix:build":
-		pm.UIXBuild(args)
+        // GoUIX commands
+        case "uix:init":
+                pm.UIXInit(args)
+        case "uix:component":
+                pm.UIXComponentCreate(args)
+        case "uix:test":
+                pm.UIXTest(args)
+        case "uix:storybook":
+                pm.UIXStorybook(args)
+        case "uix:build":
+                pm.UIXBuild(args)
 
-	// GoScale API commands
-	case "api:init":
-		pm.APIInit(args)
-	case "api:schema":
-		pm.APISchemaCreate(args)
-	case "api:deploy":
-		pm.APIDeploy(args)
-	case "api:edge":
-		pm.APIEdgeDeploy(args)
-	case "api:test":
-		pm.APITest(args)
-	case "api:doc":
-		pm.APIDocGenerate(args)
+        // GoScale API commands
+        case "api:init":
+                pm.APIInit(args)
+        case "api:schema":
+                pm.APISchemaCreate(args)
+        case "api:deploy":
+                pm.APIDeploy(args)
+        case "api:edge":
+                pm.APIEdgeDeploy(args)
+        case "api:test":
+                pm.APITest(args)
+        case "api:doc":
+                pm.APIDocGenerate(args)
 
-	// GoScale DB commands
-	case "db:init":
-		pm.DBInit(args)
-	case "db:migrate":
-		pm.DBMigrate(args)
-	case "db:seed":
-		pm.DBSeed(args)
-	case "db:backup":
-		pm.DBBackup(args)
-	case "db:restore":
-		pm.DBRestore(args)
-	case "db:schema":
-		pm.DBSchemaCreate(args)
-	case "db:timeseries":
-		pm.DBTimeSeriesEnable(args)
+        // GoScale DB commands
+        case "db:init":
+                pm.DBInit(args)
+        case "db:migrate":
+                pm.DBMigrate(args)
+        case "db:seed":
+                pm.DBSeed(args)
+        case "db:backup":
+                pm.DBBackup(args)
+        case "db:restore":
+                pm.DBRestore(args)
+        case "db:schema":
+                pm.DBSchemaCreate(args)
+        case "db:timeseries":
+                pm.DBTimeSeriesEnable(args)
 
-	default:
-		fmt.Printf("Unknown command: %s\n", command)
-		printHelp()
-		os.Exit(1)
-	}
+        default:
+                fmt.Printf("Unknown command: %s\n", command)
+                printHelp()
+                os.Exit(1)
+        }
 }
 
 func printHelp() {
-	help := `
+        help := `
 GOPM - Go Package Manager
 
 Usage: gopm [command] [options]
@@ -229,7 +234,19 @@ GoScale DB Commands:
   db:schema       Create database schema
   db:timeseries   Enable time series features
 
+Jetpack Performance Monitoring:
+  jetpack         Performance monitoring and optimization:
+    init          Initialize Jetpack
+    monitor       Monitor performance
+    lighthouse    Run Lighthouse audits
+    panel         Manage performance panel
+    metrics       Manage metrics
+    security      Security monitoring
+    export        Export metrics
+    report        Generate reports
+    chrome        Manage Chrome extension
+
 For more information, run: gopm help [command]
 `
-	fmt.Println(strings.TrimSpace(help))
+        fmt.Println(strings.TrimSpace(help))
 }
