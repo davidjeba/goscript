@@ -1,138 +1,287 @@
 package goscript
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"log"
+	"strings"
 	"sync"
 )
 
-// ErrorBoundary catches errors from child components and renders a fallback
+// ErrorBoundary catches panics and errors that occur during child component
+// rendering and falls back to a user-provided error component instead of
+// crashing the entire page.
 type ErrorBoundary struct {
 	BaseComponent
-	fallback  Component
-	hasError  bool
-	errorInfo error
-	children  []Component
-	resetKeys []interface{}
+	fallback Component
+	children []Component
+	errored  bool
+	errMsg   string
+	mutex    sync.RWMutex
 }
 
-// NewErrorBoundary creates a new error boundary
+// NewErrorBoundary creates a new ErrorBoundary with the given fallback component
+// and child components. If any child component panics or returns an error during
+// rendering, the fallback is displayed instead.
 func NewErrorBoundary(fallback Component, children ...Component) *ErrorBoundary {
+	base := NewBaseComponent(nil, nil)
 	return &ErrorBoundary{
-		fallback: fallback,
-		children: children,
+		BaseComponent: *base,
+		fallback:      fallback,
+		children:      children,
+		errored:       false,
 	}
 }
 
-// WithResetKeys allows the boundary to reset when keys change
-func (eb *ErrorBoundary) WithResetKeys(keys ...interface{}) *ErrorBoundary {
-	eb.resetKeys = keys
-	return eb
-}
-
-// Render returns the fallback if an error occurred, otherwise renders children
+// Render safely renders all child components. If any child panics, the panic
+// is recovered and the fallback component is rendered instead. The error message
+// is captured and can be inspected via the Error() method.
 func (eb *ErrorBoundary) Render() string {
-	if eb.hasError {
-		return eb.fallback.Render()
+	eb.mutex.Lock()
+	defer eb.mutex.Unlock()
+
+	if eb.errored {
+		if eb.fallback != nil {
+			props := Props{
+				"errorMessage": eb.errMsg,
+			}
+			fallbackBase := NewBaseComponent(props, nil)
+			return eb.fallback.Render()
+		}
+		return fmt.Sprintf(`<div class="error-boundary" style="padding:1rem;border:2px solid #e53e3e;border-radius:8px;background:#fff5f5;color:#e53e3e;">
+<strong>Error:</strong> %s
+</div>`, eb.errMsg)
 	}
-	var result string
+
+	var html strings.Builder
 	for _, child := range eb.children {
-		result += safeRender(child)
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					eb.errored = true
+					eb.errMsg = fmt.Sprintf("%v", r)
+				}
+			}()
+			html.WriteString(child.Render())
+		}()
 	}
-	return result
-}
 
-// CatchError checks if a component rendered with an error
-func (eb *ErrorBoundary) CatchError(err error) {
-	if err != nil {
-		eb.hasError = true
-		eb.errorInfo = err
-		log.Printf("[ErrorBoundary] Caught: %v", err)
-	}
-}
-
-func safeRender(c Component) string {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("[ErrorBoundary] Panic recovered: %v", r)
+	if eb.errored {
+		if eb.fallback != nil {
+			return eb.fallback.Render()
 		}
-	}()
-	return c.Render()
+		return fmt.Sprintf(`<div class="error-boundary" style="padding:1rem;border:2px solid #e53e3e;border-radius:8px;background:#fff5f5;color:#e53e3e;">
+<strong>Error:</strong> %s
+</div>`, eb.errMsg)
+	}
+
+	return html.String()
 }
 
-// LoadingBoundary wraps async components with loading states
+// Error returns the error message captured by the boundary, or an empty string
+// if no error has occurred.
+func (eb *ErrorBoundary) Error() string {
+	eb.mutex.RLock()
+	defer eb.mutex.RUnlock()
+	return eb.errMsg
+}
+
+// Reset clears the error state, allowing the children to attempt rendering again.
+func (eb *ErrorBoundary) Reset() {
+	eb.mutex.Lock()
+	defer eb.mutex.Unlock()
+	eb.errored = false
+	eb.errMsg = ""
+}
+
+// HasError returns true if the boundary has caught an error.
+func (eb *ErrorBoundary) HasError() bool {
+	eb.mutex.RLock()
+	defer eb.mutex.RUnlock()
+	return eb.errored
+}
+
+// LoadingBoundary wraps an asynchronous component loader with a skeleton component.
+// While the async content is loading, the skeleton is displayed. Once the loader
+// completes, the resolved component is rendered.
 type LoadingBoundary struct {
-	ID            string
-	Fallback      Component
-	Children      []Component
-	LoadingStates map[string]bool
-	mu            sync.RWMutex
+	BaseComponent
+	skeleton Component
+	loader   func(context.Context) (Component, error)
+	loaded   Component
+	loadErr  error
+	ready    bool
+	mutex    sync.RWMutex
 }
 
-// IsLoading returns true if any children are loading
-func (lb *LoadingBoundary) IsLoading() bool {
-	lb.mu.RLock()
-	defer lb.mu.RUnlock()
-	for _, loading := range lb.LoadingStates {
-		if loading {
-			return true
-		}
+// NewLoadingBoundary creates a new LoadingBoundary with the given skeleton
+// component and asynchronous loader function. The loader receives a context
+// and returns a Component or an error.
+func NewLoadingBoundary(skeleton Component, loader func(context.Context) (Component, error)) *LoadingBoundary {
+	base := NewBaseComponent(nil, nil)
+	return &LoadingBoundary{
+		BaseComponent: *base,
+		skeleton:      skeleton,
+		loader:       loader,
+		ready:         false,
 	}
-	return false
 }
 
-// Render renders children or fallback based on loading state
+// Render returns either the skeleton placeholder (while loading) or the resolved
+// component (once loading is complete). Call Load to initiate the asynchronous
+// loading process before rendering.
 func (lb *LoadingBoundary) Render() string {
-	if lb.IsLoading() {
-		fallbackHTML := ""
-		if lb.Fallback != nil {
-			fallbackHTML = lb.Fallback.Render()
+	return lb.RenderCtx(context.Background())
+}
+
+// RenderCtx renders the loading boundary with an explicit context. If the
+// component has not been loaded yet, the skeleton is displayed. The caller
+// should use the Load method to trigger asynchronous loading.
+func (lb *LoadingBoundary) RenderCtx(ctx context.Context) string {
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
+
+	if !lb.ready {
+		if lb.skeleton != nil {
+			return lb.skeleton.Render()
 		}
-		return fmt.Sprintf(`<div id="%s" data-loading-boundary>%s</div>`, lb.ID, fallbackHTML)
+		return renderDefaultSkeleton(3)
 	}
 
-	var result string
-	for _, child := range lb.Children {
-		result += child.Render()
+	if lb.loadErr != nil {
+		return fmt.Sprintf(`<div class="loading-error" style="color:#e53e3e;padding:1rem;">Failed to load content: %s</div>`, lb.loadErr.Error())
 	}
-	return fmt.Sprintf(`<div id="%s" data-loading-boundary="false">%s</div>`, lb.ID, result)
+
+	if lb.loaded != nil {
+		return lb.loaded.Render()
+	}
+
+	return renderDefaultSkeleton(3)
 }
 
-// MarkLoading sets the loading state for a specific child
-func (lb *LoadingBoundary) MarkLoading(id string, loading bool) {
-	lb.mu.Lock()
-	defer lb.mu.Unlock()
-	if lb.LoadingStates == nil {
-		lb.LoadingStates = make(map[string]bool)
-	}
-	lb.LoadingStates[id] = loading
+// Load initiates the asynchronous loading of the component in a background
+// goroutine. The result is stored internally and becomes available on the
+// next Render call.
+func (lb *LoadingBoundary) Load(ctx context.Context) {
+	go func() {
+		component, err := lb.loader(ctx)
+
+		lb.mutex.Lock()
+		defer lb.mutex.Unlock()
+		lb.ready = true
+		lb.loadErr = err
+		lb.loaded = component
+	}()
 }
 
-// TransitionBoundary manages animated transitions between states
-type TransitionBoundary struct {
-	ID       string
-	Children []Component
-	Key      interface{}
+// LoadSync loads the component synchronously, blocking until the loader completes.
+func (lb *LoadingBoundary) LoadSync(ctx context.Context) {
+	component, err := lb.loader(ctx)
+
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
+	lb.ready = true
+	lb.loadErr = err
+	lb.loaded = component
 }
 
-// Render renders the current children within a transition container
-func (tb *TransitionBoundary) Render() string {
-	var childrenHTML string
-	for _, child := range tb.Children {
-		childrenHTML += child.Render()
-	}
-	return fmt.Sprintf(`<div id="%s" data-transition-key="%v">%s</div>`, tb.ID, tb.Key, childrenHTML)
+// IsReady returns true if the component has been loaded.
+func (lb *LoadingBoundary) IsReady() bool {
+	lb.mutex.RLock()
+	defer lb.mutex.RUnlock()
+	return lb.ready
 }
 
-// ErrorInfo returns JSON-serialized error information
-func (eb *ErrorBoundary) ErrorInfo() string {
-	if eb.errorInfo == nil {
-		return "{}"
+// SkeletonComponent generates animated skeleton placeholder HTML for use during
+// loading states. The skeleton consists of pulsing gray bars that simulate
+// content loading.
+type SkeletonComponent struct {
+	BaseComponent
+	lines int
+	width string
+}
+
+// NewSkeletonLoader creates a new SkeletonComponent with the specified number of
+// placeholder lines. Each line has a slightly randomized width to create a more
+// natural loading appearance.
+func NewSkeletonLoader(lines int) *SkeletonComponent {
+	if lines <= 0 {
+		lines = 3
 	}
-	info := map[string]string{
-		"error": eb.errorInfo.Error(),
+	base := NewBaseComponent(nil, nil)
+	return &SkeletonComponent{
+		BaseComponent: *base,
+		lines:         lines,
+		width:         "100%",
 	}
-	b, _ := json.Marshal(info)
-	return string(b)
+}
+
+// Render generates the skeleton HTML with animated placeholder bars.
+func (s *SkeletonComponent) Render() string {
+	return renderDefaultSkeleton(s.lines)
+}
+
+// renderDefaultSkeleton generates a skeleton loading placeholder with the given
+// number of lines. Each line uses a CSS shimmer animation.
+func renderDefaultSkeleton(lines int) string {
+	var sb strings.Builder
+	sb.WriteString(`<div class="goscript-skeleton-loader" style="padding:1rem;">`)
+
+	widths := []string{"100%", "85%", "92%", "78%", "95%", "88%", "70%"}
+	for i := 0; i < lines; i++ {
+		width := "100%"
+		if i < len(widths) {
+			width = widths[i]
+		}
+		height := "14px"
+		if i == lines-1 {
+			height = "12px"
+			width = "60%"
+		}
+		sb.WriteString(fmt.Sprintf(
+			`<div class="goscript-skeleton" style="width:%s;height:%s;margin-bottom:12px;border-radius:4px;"></div>`,
+			width, height,
+		))
+	}
+
+	sb.WriteString(`</div>`)
+	sb.WriteString(`<style>
+.goscript-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: goscript-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes goscript-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>`)
+
+	return sb.String()
+}
+
+// NewErrorComponent creates a simple error display Component from an error message.
+// This is a convenience function for creating fallback components for ErrorBoundary.
+func NewErrorComponent(message string) Component {
+	base := NewBaseComponent(nil, nil)
+	return &errorDisplayComponent{
+		BaseComponent: *base,
+		message:       message,
+	}
+}
+
+// errorDisplayComponent is an internal component that renders an error message.
+type errorDisplayComponent struct {
+	BaseComponent
+	message string
+}
+
+// Render renders the error display HTML.
+func (e *errorDisplayComponent) Render() string {
+	if e.message == "" {
+		e.message = "An unexpected error occurred"
+	}
+	return fmt.Sprintf(`<div class="error-display" style="padding:1.5rem;border:2px solid #e53e3e;border-radius:8px;background:#fff5f5;color:#c53030;font-family:system-ui,sans-serif;">
+<div style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;">Something went wrong</div>
+<div style="color:#718096;">%s</div>
+</div>`, e.message)
 }

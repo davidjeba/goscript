@@ -3,47 +3,25 @@ package goscript
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"strings"
 )
 
-// Metadata defines the metadata for a page
-type Metadata struct {
-	Title         string
-	Description   string
-	Canonical     string
-	Keywords      []string
-	Authors       []string
-	OpenGraph     OpenGraphMeta
-	Twitter       TwitterMeta
-	Robots        RobotsMeta
-	Viewport      string
-	Charset       string
-	ThemeColor    string
-	Icons         []IconMeta
-	Manifest      string
-	AlternateLang []AlternateLangMeta
-	JSONLD        []map[string]interface{}
-	Scripts       []ScriptMeta
-	Styles        []StyleMeta
-}
-
-// OpenGraphMeta defines Open Graph metadata
+// OpenGraphMeta defines the Open Graph metadata for social media sharing.
+// These meta tags control how a page appears when shared on platforms like
+// Facebook, Twitter, LinkedIn, and Slack.
 type OpenGraphMeta struct {
 	Title       string
 	Description string
-	URL         string
 	Type        string
 	Image       string
-	ImageWidth  int
-	ImageHeight int
+	URL         string
 	SiteName    string
 	Locale      string
 }
 
-// TwitterMeta defines Twitter Card metadata
+// TwitterMeta defines Twitter Card metadata for rich previews on Twitter/X.
 type TwitterMeta struct {
-	Card        string // "summary", "summary_large_image"
+	Card        string
 	Title       string
 	Description string
 	Image       string
@@ -51,316 +29,274 @@ type TwitterMeta struct {
 	Creator     string
 }
 
-// RobotsMeta defines robots directives
-type RobotsMeta struct {
-	Index       bool
-	Follow      bool
-	NoArchive   bool
-	NoSnippet   bool
-	MaxSnippet  int
-	MaxPreview  int
-	MaxImage    int
+// Metadata holds the complete metadata configuration for a page. It includes
+// basic HTML metadata, Open Graph tags, Twitter Card tags, JSON-LD structured
+// data, and robot directives.
+type Metadata struct {
+	Title       string
+	Description string
+	Canonical   string
+	ThemeColor  string
+	Keywords    []string
+	Viewport    string
+	Robots      robotsConfig
+	OpenGraph   OpenGraphMeta
+	Twitter     TwitterMeta
+	JSONLD      []map[string]interface{}
+	Extra       map[string]string
 }
 
-// IconMeta defines a favicon or touch icon
-type IconMeta struct {
-	Rel  string
-	Href string
-	Sizes string
-	Type string
+// robotsConfig holds the robots meta directive configuration.
+type robotsConfig struct {
+	index  bool
+	follow bool
 }
 
-// ScriptMeta defines an external script tag
-type ScriptMeta struct {
-	Src     string
-	Defer   bool
-	Async   bool
-	Type    string
-	Integrity string
-}
-
-// StyleMeta defines an external stylesheet link
-type StyleMeta struct {
-	Href       string
-	Rel        string
-	Integrity  string
-	CrossOrigin string
-}
-
-// AlternateLangMeta defines an alternate language link
-type AlternateLangMeta struct {
-	HrefLang string
-	Href     string
-}
-
-// MetadataBuilder provides a fluent API for constructing metadata
+// MetadataBuilder provides a fluent API for constructing page Metadata.
+// Each method returns the builder to allow method chaining.
 type MetadataBuilder struct {
-	m *Metadata
+	metadata Metadata
 }
 
-// NewMetadata creates a new metadata builder
+// NewMetadata creates a new MetadataBuilder with sensible defaults.
 func NewMetadata() *MetadataBuilder {
 	return &MetadataBuilder{
-		m: &Metadata{
-			Keywords:      make([]string, 0),
-			Authors:       make([]string, 0),
-			Icons:         make([]IconMeta, 0),
-			JSONLD:        make([]map[string]interface{}, 0),
-			Scripts:       make([]ScriptMeta, 0),
-			Styles:        make([]StyleMeta, 0),
-			AlternateLang: make([]AlternateLangMeta, 0),
-			Viewport:      "width=device-width, initial-scale=1",
-			Charset:       "utf-8",
-			Robots:        RobotsMeta{Index: true, Follow: true},
+		metadata: Metadata{
+			Keywords: make([]string, 0),
+			Viewport: "width=device-width, initial-scale=1",
+			Robots: robotsConfig{
+				index:  true,
+				follow: true,
+			},
+			Extra: make(map[string]string),
 		},
 	}
 }
 
-// SetTitle sets the page title
-func (b *MetadataBuilder) SetTitle(title string) *MetadataBuilder {
-	b.m.Title = title
-	return b
+// SetTitle sets the page title. This is rendered as both <title> and og:title.
+func (mb *MetadataBuilder) SetTitle(title string) *MetadataBuilder {
+	mb.metadata.Title = title
+	return mb
 }
 
-// SetDescription sets the page description
-func (b *MetadataBuilder) SetDescription(desc string) *MetadataBuilder {
-	b.m.Description = desc
-	return b
+// SetDescription sets the page description used in the meta description tag
+// and og:description.
+func (mb *MetadataBuilder) SetDescription(desc string) *MetadataBuilder {
+	mb.metadata.Description = desc
+	return mb
 }
 
-// SetCanonical sets the canonical URL
-func (b *MetadataBuilder) SetCanonical(url string) *MetadataBuilder {
-	b.m.Canonical = url
-	return b
+// SetCanonical sets the canonical URL for the page to help search engines
+// identify the primary version of duplicate content.
+func (mb *MetadataBuilder) SetCanonical(url string) *MetadataBuilder {
+	mb.metadata.Canonical = url
+	return mb
 }
 
-// AddKeywords adds keywords
-func (b *MetadataBuilder) AddKeywords(keywords ...string) *MetadataBuilder {
-	b.m.Keywords = append(b.m.Keywords, keywords...)
-	return b
+// SetThemeColor sets the theme-color meta tag used by browsers to customize
+// the browser chrome color on mobile devices.
+func (mb *MetadataBuilder) SetThemeColor(color string) *MetadataBuilder {
+	mb.metadata.ThemeColor = color
+	return mb
 }
 
-// SetOpenGraph configures Open Graph metadata
-func (b *MetadataBuilder) SetOpenGraph(og OpenGraphMeta) *MetadataBuilder {
-	b.m.OpenGraph = og
-	return b
+// AddKeywords appends keywords to the page's keyword list.
+func (mb *MetadataBuilder) AddKeywords(keywords ...string) *MetadataBuilder {
+	mb.metadata.Keywords = append(mb.metadata.Keywords, keywords...)
+	return mb
 }
 
-// SetTwitter configures Twitter Card metadata
-func (b *MetadataBuilder) SetTwitter(tw TwitterMeta) *MetadataBuilder {
-	b.m.Twitter = tw
-	return b
+// SetOpenGraph sets the complete Open Graph metadata configuration.
+func (mb *MetadataBuilder) SetOpenGraph(og OpenGraphMeta) *MetadataBuilder {
+	mb.metadata.OpenGraph = og
+	return mb
 }
 
-// AddJSONLD adds structured data
-func (b *MetadataBuilder) AddJSONLD(data map[string]interface{}) *MetadataBuilder {
-	b.m.JSONLD = append(b.m.JSONLD, data)
-	return b
+// SetTwitter sets the complete Twitter Card metadata configuration.
+func (mb *MetadataBuilder) SetTwitter(tw TwitterMeta) *MetadataBuilder {
+	mb.metadata.Twitter = tw
+	return mb
 }
 
-// SetThemeColor sets the theme color
-func (b *MetadataBuilder) SetThemeColor(color string) *MetadataBuilder {
-	b.m.ThemeColor = color
-	return b
+// AddJSONLD appends a JSON-LD structured data block to the page metadata.
+// Multiple JSON-LD blocks can be added for different structured data types
+// (e.g., Article, Product, Organization).
+func (mb *MetadataBuilder) AddJSONLD(data map[string]interface{}) *MetadataBuilder {
+	mb.metadata.JSONLD = append(mb.metadata.JSONLD, data)
+	return mb
 }
 
-// SetViewport sets the viewport meta content
-func (b *MetadataBuilder) SetViewport(viewport string) *MetadataBuilder {
-	b.m.Viewport = viewport
-	return b
+// SetRobots configures the robots meta directives for indexing and following.
+func (mb *MetadataBuilder) SetRobots(index, follow bool) *MetadataBuilder {
+	mb.metadata.Robots = robotsConfig{index: index, follow: follow}
+	return mb
 }
 
-// SetManifest sets the web app manifest URL
-func (b *MetadataBuilder) SetManifest(url string) *MetadataBuilder {
-	b.m.Manifest = url
-	return b
+// SetViewport sets the viewport meta tag content.
+func (mb *MetadataBuilder) SetViewport(width, initialScale string) *MetadataBuilder {
+	mb.metadata.Viewport = fmt.Sprintf("width=%s, initial-scale=%s", width, initialScale)
+	return mb
 }
 
-// SetRobots configures robots directives
-func (b *MetadataBuilder) SetRobots(robots RobotsMeta) *MetadataBuilder {
-	b.m.Robots = robots
-	return b
+// SetExtra adds an arbitrary extra meta tag with the given name and content.
+func (mb *MetadataBuilder) SetExtra(name, content string) *MetadataBuilder {
+	mb.metadata.Extra[name] = content
+	return mb
 }
 
-// Build returns the configured metadata
-func (b *MetadataBuilder) Build() *Metadata {
-	return b.m
+// Build finalizes and returns the constructed Metadata.
+func (mb *MetadataBuilder) Build() *Metadata {
+	mb.metadata.Extra = mb.metadata.Extra
+	return &mb.metadata
 }
 
-// Render generates the complete HTML <head> section
+// Render generates the complete HTML <head> content from the Metadata.
+// It produces title, meta description, viewport, canonical, robots, theme-color,
+// keywords, Open Graph tags, Twitter Card tags, JSON-LD scripts, and any
+// extra meta tags.
 func (m *Metadata) Render() string {
 	var sb strings.Builder
 
-	if m.Charset != "" {
-		sb.WriteString(fmt.Sprintf(`<meta charset="%s">`, m.Charset))
-	}
-	if m.Viewport != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="viewport" content="%s">`, template.HTMLEscapeString(m.Viewport)))
-	}
+	// Title
 	if m.Title != "" {
-		sb.WriteString(fmt.Sprintf(`<title>%s</title>`, template.HTMLEscapeString(m.Title)))
+		sb.WriteString(fmt.Sprintf("    <title>%s</title>\n", escapeHTML(m.Title)))
 	}
+
+	// Meta description
 	if m.Description != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="description" content="%s">`, template.HTMLEscapeString(m.Description)))
+		sb.WriteString(fmt.Sprintf(`    <meta name="description" content="%s">`+"\n", escapeHTML(m.Description)))
 	}
+
+	// Viewport
+	if m.Viewport != "" {
+		sb.WriteString(fmt.Sprintf(`    <meta name="viewport" content="%s">`+"\n", escapeHTML(m.Viewport)))
+	}
+
+	// Canonical URL
 	if m.Canonical != "" {
-		sb.WriteString(fmt.Sprintf(`<link rel="canonical" href="%s">`, template.HTMLEscapeString(m.Canonical)))
+		sb.WriteString(fmt.Sprintf(`    <link rel="canonical" href="%s">`+"\n", escapeHTML(m.Canonical)))
 	}
+
+	// Robots
+	robots := "index, follow"
+	if !m.Robots.index {
+		robots = "noindex"
+	}
+	if !m.Robots.follow {
+		if robots != "" {
+			robots += ", "
+		}
+		robots += "nofollow"
+	}
+	sb.WriteString(fmt.Sprintf(`    <meta name="robots" content="%s">`+"\n", robots))
+
+	// Theme color
 	if m.ThemeColor != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="theme-color" content="%s">`, template.HTMLEscapeString(m.ThemeColor)))
-	}
-	if m.Manifest != "" {
-		sb.WriteString(fmt.Sprintf(`<link rel="manifest" href="%s">`, template.HTMLEscapeString(m.Manifest)))
+		sb.WriteString(fmt.Sprintf(`    <meta name="theme-color" content="%s">`+"\n", escapeHTML(m.ThemeColor)))
 	}
 
 	// Keywords
 	if len(m.Keywords) > 0 {
-		sb.WriteString(fmt.Sprintf(`<meta name="keywords" content="%s">`, template.HTMLEscapeString(strings.Join(m.Keywords, ", "))))
+		sb.WriteString(fmt.Sprintf(`    <meta name="keywords" content="%s">`+"\n", escapeHTML(strings.Join(m.Keywords, ", "))))
 	}
 
-	// Authors
-	for _, author := range m.Authors {
-		sb.WriteString(fmt.Sprintf(`<meta name="author" content="%s">`, template.HTMLEscapeString(author)))
-	}
-
-	// Icons
-	for _, icon := range m.Icons {
-		sb.WriteString(fmt.Sprintf(`<link rel="%s" href="%s"`, template.HTMLEscapeString(icon.Rel), template.HTMLEscapeString(icon.Href)))
-		if icon.Sizes != "" {
-			sb.WriteString(fmt.Sprintf(` sizes="%s"`, template.HTMLEscapeString(icon.Sizes)))
+	// Open Graph tags
+	if m.OpenGraph.Title != "" || m.OpenGraph.Description != "" {
+		sb.WriteString("\n")
+		if m.OpenGraph.Type != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:type" content="%s">`+"\n", escapeHTML(m.OpenGraph.Type)))
 		}
-		if icon.Type != "" {
-			sb.WriteString(fmt.Sprintf(` type="%s"`, template.HTMLEscapeString(icon.Type)))
+		if m.OpenGraph.Title != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:title" content="%s">`+"\n", escapeHTML(m.OpenGraph.Title)))
 		}
-		sb.WriteString(`>`)
-	}
-
-	// Robots
-	if !m.Robots.Index || !m.Robots.Follow {
-		var directives []string
-		if !m.Robots.Index {
-			directives = append(directives, "noindex")
+		if m.OpenGraph.Description != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:description" content="%s">`+"\n", escapeHTML(m.OpenGraph.Description)))
 		}
-		if !m.Robots.Follow {
-			directives = append(directives, "nofollow")
+		if m.OpenGraph.Image != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:image" content="%s">`+"\n", escapeHTML(m.OpenGraph.Image)))
 		}
-		if m.Robots.NoArchive {
-			directives = append(directives, "noarchive")
+		if m.OpenGraph.URL != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:url" content="%s">`+"\n", escapeHTML(m.OpenGraph.URL)))
 		}
-		if m.Robots.NoSnippet {
-			directives = append(directives, "nosnippet")
+		if m.OpenGraph.SiteName != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:site_name" content="%s">`+"\n", escapeHTML(m.OpenGraph.SiteName)))
 		}
-		if len(directives) > 0 {
-			sb.WriteString(fmt.Sprintf(`<meta name="robots" content="%s">`, strings.Join(directives, ", ")))
+		if m.OpenGraph.Locale != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta property="og:locale" content="%s">`+"\n", escapeHTML(m.OpenGraph.Locale)))
 		}
 	}
 
-	// Open Graph
-	if m.OpenGraph.Title != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:title" content="%s">`, template.HTMLEscapeString(m.OpenGraph.Title)))
-	}
-	if m.OpenGraph.Description != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:description" content="%s">`, template.HTMLEscapeString(m.OpenGraph.Description)))
-	}
-	if m.OpenGraph.URL != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:url" content="%s">`, template.HTMLEscapeString(m.OpenGraph.URL)))
-	}
-	if m.OpenGraph.Type != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:type" content="%s">`, template.HTMLEscapeString(m.OpenGraph.Type)))
-	}
-	if m.OpenGraph.Image != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:image" content="%s">`, template.HTMLEscapeString(m.OpenGraph.Image)))
-	}
-	if m.OpenGraph.SiteName != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:site_name" content="%s">`, template.HTMLEscapeString(m.OpenGraph.SiteName)))
-	}
-	if m.OpenGraph.Locale != "" {
-		sb.WriteString(fmt.Sprintf(`<meta property="og:locale" content="%s">`, template.HTMLEscapeString(m.OpenGraph.Locale)))
-	}
-
-	// Twitter
-	if m.Twitter.Card != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:card" content="%s">`, template.HTMLEscapeString(m.Twitter.Card)))
-	}
-	if m.Twitter.Title != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:title" content="%s">`, template.HTMLEscapeString(m.Twitter.Title)))
-	}
-	if m.Twitter.Description != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:description" content="%s">`, template.HTMLEscapeString(m.Twitter.Description)))
-	}
-	if m.Twitter.Image != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:image" content="%s">`, template.HTMLEscapeString(m.Twitter.Image)))
-	}
-	if m.Twitter.Site != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:site" content="%s">`, template.HTMLEscapeString(m.Twitter.Site)))
-	}
-	if m.Twitter.Creator != "" {
-		sb.WriteString(fmt.Sprintf(`<meta name="twitter:creator" content="%s">`, template.HTMLEscapeString(m.Twitter.Creator)))
-	}
-
-	// Alternate languages
-	for _, alt := range m.AlternateLang {
-		sb.WriteString(fmt.Sprintf(`<link rel="alternate" hreflang="%s" href="%s">`, template.HTMLEscapeString(alt.HrefLang), template.HTMLEscapeString(alt.Href)))
+	// Twitter Card tags
+	if m.Twitter.Card != "" || m.Twitter.Title != "" {
+		sb.WriteString("\n")
+		if m.Twitter.Card != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:card" content="%s">`+"\n", escapeHTML(m.Twitter.Card)))
+		}
+		if m.Twitter.Title != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:title" content="%s">`+"\n", escapeHTML(m.Twitter.Title)))
+		}
+		if m.Twitter.Description != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:description" content="%s">`+"\n", escapeHTML(m.Twitter.Description)))
+		}
+		if m.Twitter.Image != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:image" content="%s">`+"\n", escapeHTML(m.Twitter.Image)))
+		}
+		if m.Twitter.Site != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:site" content="%s">`+"\n", escapeHTML(m.Twitter.Site)))
+		}
+		if m.Twitter.Creator != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="twitter:creator" content="%s">`+"\n", escapeHTML(m.Twitter.Creator)))
+		}
 	}
 
 	// JSON-LD structured data
-	for _, ld := range m.JSONLD {
-		b, _ := json.Marshal(ld)
-		sb.WriteString(fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(b)))
+	if len(m.JSONLD) > 0 {
+		sb.WriteString("\n")
+		for _, data := range m.JSONLD {
+			jsonBytes, err := json.MarshalIndent(data, "    ", "  ")
+			if err != nil {
+				continue
+			}
+			sb.WriteString(fmt.Sprintf(`    <script type="application/ld+json">`+"\n"))
+			sb.WriteString(string(jsonBytes))
+			sb.WriteString("\n    </script>\n")
+		}
 	}
 
-	// External scripts
-	for _, script := range m.Scripts {
-		attrs := make([]string, 0)
-		attrs = append(attrs, fmt.Sprintf(`src="%s"`, template.HTMLEscapeString(script.Src)))
-		if script.Defer {
-			attrs = append(attrs, "defer")
+	// Extra meta tags
+	for name, content := range m.Extra {
+		if content != "" {
+			sb.WriteString(fmt.Sprintf(`    <meta name="%s" content="%s">`+"\n", escapeHTML(name), escapeHTML(content)))
 		}
-		if script.Async {
-			attrs = append(attrs, "async")
-		}
-		if script.Type != "" {
-			attrs = append(attrs, fmt.Sprintf(`type="%s"`, template.HTMLEscapeString(script.Type)))
-		}
-		if script.Integrity != "" {
-			attrs = append(attrs, fmt.Sprintf(`integrity="%s"`, template.HTMLEscapeString(script.Integrity)))
-		}
-		sb.WriteString(fmt.Sprintf(`<script %s></script>`, strings.Join(attrs, " ")))
-	}
-
-	// External styles
-	for _, style := range m.Styles {
-		rel := style.Rel
-		if rel == "" {
-			rel = "stylesheet"
-		}
-		sb.WriteString(fmt.Sprintf(`<link rel="%s" href="%s"`, template.HTMLEscapeString(rel), template.HTMLEscapeString(style.Href)))
-		if style.Integrity != "" {
-			sb.WriteString(fmt.Sprintf(` integrity="%s"`, template.HTMLEscapeString(style.Integrity)))
-		}
-		if style.CrossOrigin != "" {
-			sb.WriteString(fmt.Sprintf(` crossorigin="%s"`, template.HTMLEscapeString(style.CrossOrigin)))
-		}
-		sb.WriteString(`>`)
 	}
 
 	return sb.String()
 }
 
-// ToMap converts metadata to a map for JSON serialization
-func (m *Metadata) ToMap() map[string]interface{} {
-	result := make(map[string]interface{})
-	if m.Title != "" {
-		result["title"] = m.Title
-	}
-	if m.Description != "" {
-		result["description"] = m.Description
-	}
-	if m.Canonical != "" {
-		result["canonical"] = m.Canonical
-	}
-	if len(m.Keywords) > 0 {
-		result["keywords"] = m.Keywords
-	}
-	return result
+// escapeHTML escapes special characters in a string for safe embedding in
+// HTML attribute values and text content.
+func escapeHTML(s string) string {
+	s = strings.Replace(s, "&", "&amp;", -1)
+	s = strings.Replace(s, "<", "&lt;", -1)
+	s = strings.Replace(s, ">", "&gt;", -1)
+	s = strings.Replace(s, `"`, "&quot;", -1)
+	s = strings.Replace(s, "'", "&#39;", -1)
+	return s
+}
+
+// DefaultMetadata returns a pre-configured MetadataBuilder with commonly used
+// defaults suitable for most web pages.
+func DefaultMetadata() *MetadataBuilder {
+	return NewMetadata().
+		SetTitle("GoScript App").
+		SetDescription("Built with GoScript 2.0 — Full-Stack Go Web Framework").
+		SetViewport("device-width", "1.0").
+		SetThemeColor("#ffffff").
+		SetRobots(true, true).
+		SetOpenGraph(OpenGraphMeta{
+			Type: "website",
+		}).
+		SetTwitter(TwitterMeta{
+			Card: "summary_large_image",
+		})
 }

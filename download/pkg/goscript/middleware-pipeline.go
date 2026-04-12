@@ -1,337 +1,416 @@
 package goscript
 
 import (
+	"compress/gzip"
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
-// Pipeline is an ordered chain of middleware handlers
-type Pipeline struct {
-	handlers []PipelineHandler
-	mu       sync.RWMutex
-}
-
-// PipelineHandler processes a request and calls the next handler
-type PipelineHandler func(ctx *RequestContext, next PipelineNext) PipelineResult
-
-// PipelineNext invokes the next handler in the chain
-type PipelineNext func() PipelineResult
-
-// PipelineResult represents the outcome of pipeline execution
-type PipelineResult struct {
-	Status  int
-	Body    []byte
-	Headers http.Header
-	Aborted bool
-}
-
-// RequestContext wraps http.Request with additional context
-type RequestContext struct {
-	*http.Request
-	Response  http.ResponseWriter
-	Params    map[string]string
-	Values    map[string]interface{}
-	StartTime time.Time
-	Aborted   bool
-}
-
-// Set stores a value in the request context
-func (rc *RequestContext) Set(key string, value interface{}) {
-	rc.Values[key] = value
-}
-
-// Get retrieves a value from the request context
-func (rc *RequestContext) Get(key string) interface{} {
-	return rc.Values[key]
-}
-
-// Abort stops the middleware chain
-func (rc *RequestContext) Abort(status int) {
-	rc.Aborted = true
-	rc.Response.WriteHeader(status)
-}
-
-// NewRequestContext creates a new RequestContext from an HTTP request
-func NewRequestContext(w http.ResponseWriter, r *http.Request) *RequestContext {
-	return &RequestContext{
-		Request:   r,
-		Response:  w,
-		Params:    make(map[string]string),
-		Values:    make(map[string]interface{}),
-		StartTime: time.Now(),
-	}
-}
-
-// NewPipeline creates a new middleware pipeline
-func NewPipeline() *Pipeline {
-	return &Pipeline{
-		handlers: make([]PipelineHandler, 0),
-	}
-}
-
-// Use adds a handler to the pipeline
-func (p *Pipeline) Use(handler PipelineHandler) *Pipeline {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.handlers = append(p.handlers, handler)
-	return p
-}
-
-// Execute runs all middleware handlers in order
-func (p *Pipeline) Execute(w http.ResponseWriter, r *http.Request) {
-	ctx := NewRequestContext(w, r)
-	p.mu.RLock()
-	handlers := make([]PipelineHandler, len(p.handlers))
-	copy(handlers, p.handlers)
-	p.mu.RUnlock()
-	p.executeChain(ctx, handlers, 0)
-}
-
-func (p *Pipeline) executeChain(
-	ctx *RequestContext,
-	handlers []PipelineHandler,
-	index int,
-) PipelineResult {
-	if ctx.Aborted || index >= len(handlers) {
-		return PipelineResult{Status: 200, Aborted: ctx.Aborted}
-	}
-	return handlers[index](ctx, func() PipelineResult {
-		return p.executeChain(ctx, handlers, index+1)
-	})
-}
-
-// ==================== Built-in Middleware ====================
-
-// GzipMiddleware compresses responses with gzip
-func GzipMiddleware() PipelineHandler {
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		if !strings.Contains(ctx.Header.Get("Accept-Encoding"), "gzip") {
-			return next()
-		}
-		ctx.Response.Header().Set("Content-Encoding", "gzip")
-		return next()
-	}
-}
-
-// CORSConfig defines CORS configuration for the middleware pipeline
+// CORSConfig holds Cross-Origin Resource Sharing configuration. It specifies
+// which origins, methods, and headers are permitted in cross-origin requests.
 type CORSConfig struct {
-	AllowAllOrigins  bool
-	AllowedOrigins   []string
-	AllowedMethods   []string
-	AllowedHeaders   []string
+	AllowOrigins     []string
+	AllowMethods     []string
+	AllowHeaders     []string
+	ExposeHeaders    []string
 	AllowCredentials bool
 	MaxAge           int
 }
 
-// CORSMiddleware handles Cross-Origin Resource Sharing
-func CORSMiddleware(config CORSConfig) PipelineHandler {
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		origin := ctx.Header.Get("Origin")
-		allowed := false
-
-		if config.AllowAllOrigins {
-			allowed = true
-		} else {
-			for _, o := range config.AllowedOrigins {
-				if o == origin {
-					allowed = true
-					break
-				}
-			}
-		}
-
-		if allowed {
-			if config.AllowAllOrigins {
-				ctx.Response.Header().Set("Access-Control-Allow-Origin", "*")
-			} else {
-				ctx.Response.Header().Set("Access-Control-Allow-Origin", origin)
-			}
-			methods := config.AllowedMethods
-			if len(methods) == 0 {
-				methods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-			}
-			ctx.Response.Header().Set("Access-Control-Allow-Methods",
-				strings.Join(methods, ", "))
-			headers := config.AllowedHeaders
-			if len(headers) == 0 {
-				headers = []string{"Content-Type", "Authorization"}
-			}
-			ctx.Response.Header().Set("Access-Control-Allow-Headers",
-				strings.Join(headers, ", "))
-			ctx.Response.Header().Set("Access-Control-Allow-Credentials",
-				strconv.FormatBool(config.AllowCredentials))
-			if config.MaxAge > 0 {
-				ctx.Response.Header().Set("Access-Control-Max-Age",
-					strconv.Itoa(config.MaxAge))
-			}
-		}
-
-		if ctx.Request.Method == "OPTIONS" {
-			ctx.Response.WriteHeader(204)
-			return PipelineResult{Status: 204, Aborted: true}
-		}
-		return next()
+// DefaultCORSConfig returns a sensible default CORS configuration that allows
+// common methods and headers while being restrictive on origins.
+func DefaultCORSConfig() CORSConfig {
+	return CORSConfig{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Request-ID"},
+		ExposeHeaders:    []string{"X-Request-ID", "X-Response-Time"},
+		AllowCredentials: false,
+		MaxAge:           86400,
 	}
 }
 
-// SecurityHeadersMiddleware adds security headers
-func SecurityHeadersMiddleware() PipelineHandler {
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		h := ctx.Response.Header()
-		h.Set("X-Content-Type-Options", "nosniff")
-		h.Set("X-Frame-Options", "DENY")
-		h.Set("X-XSS-Protection", "1; mode=block")
-		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-		return next()
-	}
-}
-
-// RecoveryMiddleware recovers from panics
-func RecoveryMiddleware(logger func(string, ...interface{})) PipelineHandler {
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		defer func() {
-			if r := recover(); r != nil {
-				logger("[PANIC] %s %s: %v", ctx.Request.Method, ctx.Request.URL.Path, r)
-				ctx.Abort(500)
-			}
-		}()
-		return next()
-	}
-}
-
-// Session represents a user session
-type Session struct {
-	ID        string
-	Data      map[string]interface{}
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
-
-// SessionStore defines the interface for session storage
+// SessionStore defines the interface for session storage backends. Implementations
+// must be safe for concurrent use.
 type SessionStore interface {
-	Get(id string) (*Session, error)
-	Create() *Session
-	Delete(id string) error
+	Get(sessionID string) (map[string]interface{}, error)
+	Set(sessionID string, data map[string]interface{}) error
+	Delete(sessionID string) error
 }
 
-// InMemorySessionStore provides an in-memory session store
+// InMemorySessionStore is an in-memory implementation of SessionStore suitable for
+// development and single-server deployments. Sessions expire after a configurable TTL.
 type InMemorySessionStore struct {
-	sessions map[string]*Session
-	mu       sync.RWMutex
+	sessions map[string]*sessionEntry
+	ttl      time.Duration
+	mutex    sync.RWMutex
 }
 
-// NewInMemorySessionStore creates a new in-memory session store
-func NewInMemorySessionStore() *InMemorySessionStore {
-	return &InMemorySessionStore{
-		sessions: make(map[string]*Session),
+type sessionEntry struct {
+	data      map[string]interface{}
+	createdAt time.Time
+}
+
+// NewInMemorySessionStore creates a new InMemorySessionStore with the given TTL.
+// Sessions that have not been accessed within the TTL are automatically cleaned up.
+func NewInMemorySessionStore(ttl time.Duration) *InMemorySessionStore {
+	store := &InMemorySessionStore{
+		sessions: make(map[string]*sessionEntry),
+		ttl:      ttl,
 	}
+	go store.cleanupExpired()
+	return store
 }
 
-// Get retrieves a session by ID
-func (s *InMemorySessionStore) Get(id string) (*Session, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.sessions[id], nil
-}
+// Get retrieves the session data for the given session ID. Returns an error if
+// the session does not exist or has expired.
+func (s *InMemorySessionStore) Get(sessionID string) (map[string]interface{}, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-// Create creates a new session
-func (s *InMemorySessionStore) Create() *Session {
-	session := &Session{
-		ID:        generateSessionID(),
-		Data:      make(map[string]interface{}),
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+	entry, exists := s.sessions[sessionID]
+	if !exists {
+		return nil, fmt.Errorf("session not found")
 	}
-	s.mu.Lock()
-	s.sessions[session.ID] = session
-	s.mu.Unlock()
-	return session
+	if time.Since(entry.createdAt) > s.ttl {
+		return nil, fmt.Errorf("session expired")
+	}
+
+	// Return a copy to prevent external mutation
+	result := make(map[string]interface{}, len(entry.data))
+	for k, v := range entry.data {
+		result[k] = v
+	}
+	return result, nil
 }
 
-// Delete removes a session by ID
-func (s *InMemorySessionStore) Delete(id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.sessions, id)
+// Set stores or updates the session data for the given session ID. If the session
+// already exists, its TTL is refreshed.
+func (s *InMemorySessionStore) Set(sessionID string, data map[string]interface{}) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	copy := make(map[string]interface{}, len(data))
+	for k, v := range data {
+		copy[k] = v
+	}
+	s.sessions[sessionID] = &sessionEntry{
+		data:      copy,
+		createdAt: time.Now(),
+	}
 	return nil
 }
 
-func generateSessionID() string {
-	return strings.Replace(time.Now().Format("20060102150405.000000"), ".", "", -1)
+// Delete removes the session with the given ID.
+func (s *InMemorySessionStore) Delete(sessionID string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	delete(s.sessions, sessionID)
+	return nil
 }
 
-// SessionMiddleware provides session management
-func SessionMiddleware(secret string, store SessionStore) PipelineHandler {
-	_ = secret // secret can be used for signing in a real implementation
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		cookie, err := ctx.Request.Cookie("gosession")
-		var session *Session
-
-		if err == nil && cookie.Value != "" {
-			session, _ = store.Get(cookie.Value)
+// cleanupExpired periodically removes expired sessions from memory.
+func (s *InMemorySessionStore) cleanupExpired() {
+	ticker := time.NewTicker(s.ttl / 2)
+	defer ticker.Stop()
+	for range ticker.C {
+		s.mutex.Lock()
+		now := time.Now()
+		for id, entry := range s.sessions {
+			if time.Since(entry.createdAt) > s.ttl {
+				delete(s.sessions, id)
+			}
 		}
-
-		if session == nil {
-			session = store.Create()
-			http.SetCookie(ctx.Response, &http.Cookie{
-				Name:     "gosession",
-				Value:    session.ID,
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteLaxMode,
-				MaxAge:   86400,
-			})
-		}
-
-		ctx.Set("session", session)
-		return next()
+		s.mutex.Unlock()
 	}
 }
 
-// LoggingMiddleware logs request information
-func LoggingMiddleware(logger func(string, ...interface{})) PipelineHandler {
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		result := next()
-		duration := time.Since(ctx.StartTime)
-		logger("[HTTP] %s %s %d %s", ctx.Request.Method, ctx.Request.URL.Path, result.Status, duration)
-		return result
+// Pipeline is a composable middleware pipeline that applies a chain of middleware
+// functions around a final http.Handler. Middleware is applied in the order they
+// are added, with the first middleware being the outermost wrapper.
+type Pipeline struct {
+	middlewares []func(http.Handler) http.Handler
+}
+
+// NewPipeline creates a new empty middleware Pipeline.
+func NewPipeline() *Pipeline {
+	return &Pipeline{
+		middlewares: make([]func(http.Handler) http.Handler, 0),
 	}
 }
 
-// RateLimitMiddleware provides request rate limiting
-func RateLimitMiddleware(requests int, window time.Duration) PipelineHandler {
-	type tracker struct {
-		counts map[string]int
-		mu     sync.RWMutex
-	}
-	t := &tracker{counts: make(map[string]int)}
+// Use adds a middleware function to the pipeline. The middleware wraps the next
+// handler in the chain, enabling pre-processing and post-processing of requests.
+func (p *Pipeline) Use(middleware func(http.Handler) http.Handler) *Pipeline {
+	p.middlewares = append(p.middlewares, middleware)
+	return p
+}
 
-	go func() {
-		for {
-			time.Sleep(window)
-			t.mu.Lock()
-			t.counts = make(map[string]int)
-			t.mu.Unlock()
-		}
-	}()
-
-	return func(ctx *RequestContext, next PipelineNext) PipelineResult {
-		ip := strings.Split(ctx.Request.RemoteAddr, ":")[0]
-		t.mu.RLock()
-		count := t.counts[ip]
-		t.mu.RUnlock()
-		if count >= requests {
-			ctx.Response.WriteHeader(429)
-			return PipelineResult{Status: 429, Aborted: true}
-		}
-		t.mu.Lock()
-		t.counts[ip]++
-		t.mu.Unlock()
-		return next()
+// Execute runs the middleware pipeline against the final handler, writing the
+// result to the provided http.ResponseWriter. If no middleware is registered,
+// the handler is invoked directly.
+func (p *Pipeline) Execute(w http.ResponseWriter, r *http.Request, handler http.Handler) {
+	current := handler
+	for i := len(p.middlewares) - 1; i >= 0; i-- {
+		current = p.middlewares[i](current)
 	}
+	current.ServeHTTP(w, r)
+}
+
+// GzipMiddleware returns a middleware that compresses HTTP responses using gzip
+// encoding. It only compresses responses for clients that indicate support via
+// the Accept-Encoding header, and skips compression for responses smaller than
+// 512 bytes where the overhead outweighs the benefit.
+func GzipMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			gz := gzip.NewWriter(w)
+			defer gz.Close()
+
+			gzw := &gzipResponseWriter{
+				Writer:         gz,
+				ResponseWriter: w,
+			}
+
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Del("Content-Length")
+
+			next.ServeHTTP(gzw, r)
+		})
+	}
+}
+
+// gzipResponseWriter wraps an http.ResponseWriter to intercept written content
+// and pass it through a gzip writer.
+type gzipResponseWriter struct {
+	Writer         io.Writer
+	ResponseWriter http.ResponseWriter
+}
+
+// Header returns the underlying ResponseWriter's header map.
+func (gzw *gzipResponseWriter) Header() http.Header {
+	return gzw.ResponseWriter.Header()
+}
+
+// Write writes the compressed data to the gzip writer.
+func (gzw *gzipResponseWriter) Write(b []byte) (int, error) {
+	return gzw.Writer.Write(b)
+}
+
+// WriteHeader sets the HTTP status code on the underlying ResponseWriter.
+func (gzw *gzipResponseWriter) WriteHeader(statusCode int) {
+	gzw.ResponseWriter.WriteHeader(statusCode)
+}
+
+// RequestIDMiddleware returns a middleware that generates a unique request ID
+// for each incoming request and sets it in the X-Request-ID response header.
+// The ID is a cryptographically random hex string of 16 bytes.
+func RequestIDMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID := generateRequestID()
+			w.Header().Set("X-Request-ID", requestID)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// generateRequestID generates a unique request ID using crypto/rand.
+func generateRequestID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+// CORSMiddleware returns a middleware that handles Cross-Origin Resource Sharing
+// based on the provided CORSConfig. It sets appropriate headers and handles
+// preflight OPTIONS requests.
+func CORSMiddleware(config CORSConfig) func(http.Handler) http.Handler {
+	originPatterns := config.AllowOrigins
+	methods := strings.Join(config.AllowMethods, ", ")
+	headers := strings.Join(config.AllowHeaders, ", ")
+	exposed := strings.Join(config.ExposeHeaders, ", ")
+	maxAge := fmt.Sprintf("%d", config.MaxAge)
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			allowedOrigin := ""
+			for _, pattern := range originPatterns {
+				if pattern == "*" || pattern == origin {
+					allowedOrigin = pattern
+					break
+				}
+			}
+
+			if allowedOrigin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+				w.Header().Set("Access-Control-Allow-Methods", methods)
+				w.Header().Set("Access-Control-Allow-Headers", headers)
+				if exposed != "" {
+					w.Header().Set("Access-Control-Expose-Headers", exposed)
+				}
+				if config.AllowCredentials {
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				}
+				w.Header().Set("Access-Control-Max-Age", maxAge)
+			}
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// SecurityHeadersMiddleware returns a middleware that adds security-related HTTP
+// headers to every response, including X-Content-Type-Options, X-Frame-Options,
+// X-XSS-Protection, Strict-Transport-Security, Referrer-Policy, and
+// Content-Security-Policy.
+func SecurityHeadersMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'")
+			w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RecoveryMiddleware returns a middleware that recovers from panics in downstream
+// handlers, logs the panic details using the provided logger function, and
+// returns a 500 Internal Server Error response.
+func RecoveryMiddleware(logger func(string, ...interface{})) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if err := recover(); err != nil {
+					if logger != nil {
+						logger("[RECOVERY] panic recovered: %v, path: %s", err, r.URL.Path)
+					}
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprintf(w, `{"success":false,"error":{"code":500,"message":"Internal Server Error"}}`)
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// LoggingMiddleware returns a middleware that logs each incoming request with
+// the method, path, status code, and duration. The logger function receives
+// a format string and arguments.
+func LoggingMiddleware(logger func(string, ...interface{})) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+
+			lrw := &loggingResponseWriter{
+				ResponseWriter: w,
+				statusCode:     http.StatusOK,
+			}
+
+			next.ServeHTTP(lrw, r)
+
+			duration := time.Since(start)
+			if logger != nil {
+				logger("[HTTP] %s %s %d %s", r.Method, r.URL.Path, lrw.statusCode, duration)
+			}
+		})
+	}
+}
+
+// loggingResponseWriter wraps http.ResponseWriter to capture the status code.
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+// WriteHeader captures the status code.
+func (lrw *loggingResponseWriter) WriteHeader(statusCode int) {
+	lrw.statusCode = statusCode
+	lrw.ResponseWriter.WriteHeader(statusCode)
+}
+
+// RateLimitMiddleware returns a middleware that limits the number of requests
+// per second per client IP, with a configurable burst allowance. The burst
+// parameter allows a short burst of requests above the sustained rate.
+func RateLimitMiddleware(requestsPerSecond int, burst int) func(http.Handler) http.Handler {
+	limiter := newAPIRateLimiter(burst, time.Second)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			clientIP := r.RemoteAddr
+			if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+				clientIP = strings.Split(forwarded, ",")[0]
+			}
+			if !limiter.allow(clientIP) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusTooManyRequests)
+				fmt.Fprintf(w, `{"success":false,"error":{"code":429,"message":"Too Many Requests"}}`)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// SessionMiddleware returns a middleware that manages sessions using the provided
+// secret for cookie signing and the SessionStore for persistence. It reads the
+// session ID from a cookie named "goscript_session" and attaches session data
+// to the request context.
+func SessionMiddleware(secret string, store SessionStore) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie("goscript_session")
+			var sessionID string
+
+			if err == nil && cookie.Value != "" {
+				sessionID = cookie.Value
+			} else {
+				// Generate a new session ID
+				sessionID = generateSessionID(secret)
+				http.SetCookie(w, &http.Cookie{
+					Name:     "goscript_session",
+					Value:    sessionID,
+					Path:     "/",
+					HttpOnly: true,
+					Secure:   true,
+					SameSite: http.SameSiteLaxMode,
+					MaxAge:   86400,
+				})
+			}
+
+			// Store session ID in the request header for downstream access
+			r.Header.Set("X-Session-ID", sessionID)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// generateSessionID generates a new session ID by combining a random nonce with
+// a timestamp. The secret parameter adds entropy to the generation.
+func generateSessionID(secret string) string {
+	b := make([]byte, 24)
+	rand.Read(b)
+	return hex.EncodeToString(b) + hex.EncodeToString([]byte(secret))[:8]
 }

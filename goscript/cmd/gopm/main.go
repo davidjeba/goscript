@@ -1,300 +1,252 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
-)
+        "fmt"
+        "os"
+        "strings"
 
-const goscriptVersion = "2.0.0"
-
-func main() {
-	flag.Usage = func() {
-		fmt.Println(`
- ███╗   ██╗ ██████╗ ███████╗ ██████╗ ██████╗ ███╗   ██╗
- ████╗  ██║██╔═══██╗██╔════╝██╔═══██╗██╔══██╗████╗  ██║
- ██╔██╗ ██║██║   ██║███████╗██║   ██║██████╔╝██╔██╗ ██║
- ██║╚██╗██║██║   ██║╚════██║██║   ██║██╔══██╗██║╚██╗██║
- ██║ ╚████║╚██████╔╝███████║╚██████╔╝██║  ██║██║ ╚████║
- ╚═╝  ╚═══╝ ╚═════╝ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝
-  GoScript 2.0 — Full-Stack Go Web Framework
-`)
-		fmt.Println("Commands:")
-		fmt.Println("  gopm init [name]     Initialize a new GoScript project")
-		fmt.Println("  gopm dev             Start development server with HMR")
-		fmt.Println("  gopm build           Build for production")
-		fmt.Println("  gopm start           Start production server")
-		fmt.Println("  gopm generate <type> Generate components, pages, API routes")
-		fmt.Println("  gopm deploy          Deploy to platform")
-		fmt.Println("  gopm lint            Run linter")
-		fmt.Println("  gopm test            Run tests")
-	}
-
-	if len(os.Args) < 2 {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	cmd := os.Args[1]
-
-	switch cmd {
-	case "init":
-		initProject()
-	case "dev":
-		runDev()
-	case "build":
-		runBuild()
-	case "start":
-		runStart()
-	case "generate", "g":
-		generate(os.Args[2:])
-	case "deploy":
-		deploy()
-	case "lint":
-		runLint()
-	case "test":
-		runTest()
-	default:
-		fmt.Printf("Unknown command: %s\n", cmd)
-		flag.Usage()
-		os.Exit(1)
-	}
-}
-
-func initProject() {
-	name := "my-goscript-app"
-	if len(os.Args) > 2 {
-		name = os.Args[2]
-	}
-
-	fmt.Printf("Creating GoScript project: %s\n", name)
-
-	structure := map[string]string{
-		"go.mod": fmt.Sprintf(
-			"module %s\ngo 1.22\n\nrequire github.com/davidjeba/goscript v%s\n",
-			name, goscriptVersion),
-		"goscript.config.json": `{
-  "port": 8080,
-  "renderMode": "hybrid",
-  "ssr": { "enabled": true },
-  "hmr": { "enabled": true, "port": 8081 },
-  "cors": { "origins": ["*"] },
-  "compression": { "enabled": true }
-}
-`,
-		"cmd/server/main.go": fmt.Sprintf(`package main
-
-import (
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-
-	goscript "github.com/davidjeba/goscript/pkg/goscript"
+        "github.com/davidjeba/goscript/cmd/gopm/commands"
+        "github.com/davidjeba/goscript/pkg/gopm"
 )
 
 func main() {
-	router := goscript.NewAppRouter("/")
-	router.RegisterRoute("/", func(w http.ResponseWriter, r *http.Request, params map[string]string) {
-		w.Write([]byte("<h1>Hello from GoScript!</h1>"))
-	}, []string{"GET"})
+        if len(os.Args) < 2 {
+                printHelp()
+                os.Exit(1)
+        }
 
-	pipeline := goscript.NewPipeline()
-	pipeline.Use(goscript.CORSMiddleware(goscript.CORSConfig{AllowAllOrigins: true}))
-	pipeline.Use(goscript.SecurityHeadersMiddleware())
-	pipeline.Use(goscript.LoggingMiddleware(log.Printf))
+        command := os.Args[1]
+        args := os.Args[2:]
 
-	fmt.Println("GoScript server starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
-}
-`, name),
-		"app/layout.go": `package app
+        pm := gopm.NewPackageManager()
 
-import "github.com/davidjeba/goscript/pkg/goscript"
+        switch command {
+        // Jetpack commands
+        case "jetpack":
+                commands.JetpackCommand(args)
+                return
+        // Basic package management
+        case "get":
+                pm.Get(args)
+        case "update":
+                pm.Update(args)
+        case "clean":
+                pm.Clean(args)
+        case "run":
+                pm.Run(args)
+        case "audit":
+                pm.Audit(args)
+        case "publish":
+                pm.Publish(args)
+        case "version":
+                pm.Version(args)
+        case "cache-clear":
+                pm.CacheClear(args)
+        case "list":
+                pm.List(args)
+        case "verify":
+                pm.Verify(args)
+        case "dedupe":
+                pm.Dedupe(args)
+        case "prune":
+                pm.Prune(args)
+        case "config":
+                pm.Config(args)
+        case "help":
+                pm.Help(args)
+        case "auth":
+                pm.Auth(args)
+        case "setup":
+                pm.Setup(args)
+        case "sync":
+                pm.Sync(args)
+        case "doctor":
+                pm.Doctor(args)
+        case "migrate":
+                pm.Migrate(args)
+        case "rollback":
+                pm.Rollback(args)
 
-func Layout() goscript.Component {
-	return goscript.FunctionalComponent(func(props goscript.Props) string {
-		return "<!DOCTYPE html><html><head></head><body>{{children}}</body></html>"
-	})
-}
-`,
-		"app/page.go": `package app
+        // Gocsx CSS framework commands
+        case "css:build":
+                pm.CSSBuild(args)
+        case "css:watch":
+                pm.CSSWatch(args)
+        case "css:optimize":
+                pm.CSSOptimize(args)
+        case "css:analyze":
+                pm.CSSAnalyze(args)
+        case "css:theme":
+                pm.CSSTheme(args)
 
-import "github.com/davidjeba/goscript/pkg/goscript"
+        // WebGPU and 3D commands
+        case "webgpu:init":
+                pm.WebGPUInit(args)
+        case "webgpu:build":
+                pm.WebGPUBuild(args)
+        case "webgpu:optimize":
+                pm.WebGPUOptimize(args)
+        case "3d:scene":
+                pm.Scene3DCreate(args)
+        case "3d:model":
+                pm.Model3DImport(args)
+        case "3d:export":
+                pm.Model3DExport(args)
+        case "3d:optimize":
+                pm.Model3DOptimize(args)
+        case "3d:convert":
+                pm.Model3DConvert(args)
 
-func Page() goscript.Component {
-	return goscript.FunctionalComponent(func(props goscript.Props) string {
-		return "<h1>Welcome to GoScript</h1>"
-	})
-}
-`,
-	}
+        // 2D Canvas commands
+        case "2d:init":
+                pm.Canvas2DInit(args)
+        case "2d:sprite":
+                pm.SpriteCreate(args)
+        case "2d:animation":
+                pm.AnimationCreate(args)
+        case "2d:atlas":
+                pm.AtlasCreate(args)
+        case "2d:optimize":
+                pm.Canvas2DOptimize(args)
 
-	for path, content := range structure {
-		fullPath := filepath.Join(name, path)
-		dir := filepath.Dir(fullPath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			fmt.Printf("Error creating directory %s: %v\n", dir, err)
-			continue
-		}
-		if err := ioutil.WriteFile(fullPath, []byte(content), 0644); err != nil {
-			fmt.Printf("Error creating %s: %v\n", fullPath, err)
-			continue
-		}
-		fmt.Printf("  Created %s\n", fullPath)
-	}
+        // GoUIX commands
+        case "uix:init":
+                pm.UIXInit(args)
+        case "uix:component":
+                pm.UIXComponentCreate(args)
+        case "uix:test":
+                pm.UIXTest(args)
+        case "uix:storybook":
+                pm.UIXStorybook(args)
+        case "uix:build":
+                pm.UIXBuild(args)
 
-	fmt.Printf("\nProject '%s' created successfully!\n", name)
-	fmt.Printf("  cd %s && gopm dev\n", name)
-}
+        // GoScale API commands
+        case "api:init":
+                pm.APIInit(args)
+        case "api:schema":
+                pm.APISchemaCreate(args)
+        case "api:deploy":
+                pm.APIDeploy(args)
+        case "api:edge":
+                pm.APIEdgeDeploy(args)
+        case "api:test":
+                pm.APITest(args)
+        case "api:doc":
+                pm.APIDocGenerate(args)
 
-func runDev() {
-	fmt.Printf("Starting development server with HMR...\n")
-	fmt.Printf("GoScript %s — Dev Server\n", goscriptVersion)
-	// In production, this would start the DevServer with HMR
-	fmt.Println("  Server: http://localhost:8080")
-	fmt.Println("  HMR:    ws://localhost:8081")
-	select {} // block forever
-}
+        // GoScale DB commands
+        case "db:init":
+                pm.DBInit(args)
+        case "db:migrate":
+                pm.DBMigrate(args)
+        case "db:seed":
+                pm.DBSeed(args)
+        case "db:backup":
+                pm.DBBackup(args)
+        case "db:restore":
+                pm.DBRestore(args)
+        case "db:schema":
+                pm.DBSchemaCreate(args)
+        case "db:timeseries":
+                pm.DBTimeSeriesEnable(args)
 
-func runBuild() {
-	start := time.Now()
-	fmt.Printf("Building for production...\n")
-	cmd := exec.Command("go", "build", "-o", "bin/server", "./cmd/server/")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Build failed: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Printf("Build completed in %s\n", time.Since(start))
-}
-
-func runStart() {
-	fmt.Printf("Starting production server...\n")
-	cmd := exec.Command("./bin/server")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Server error: %v\n", err)
-		os.Exit(1)
-	}
-}
-
-func generate(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Usage: gopm generate <component|page|api> <name>")
-		return
-	}
-
-	generateType := args[0]
-	name := "new-item"
-	if len(args) > 1 {
-		name = args[1]
-	}
-
-	switch generateType {
-	case "component", "c":
-		kebab := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
-		filePath := filepath.Join("pkg", "components", kebab+".go")
-		content := fmt.Sprintf(`package components
-
-import "github.com/davidjeba/goscript/pkg/goscript"
-
-type %s struct {
-	goscript.BaseComponent
-}
-
-func New%s() *%s {
-	return &%s{}
-}
-
-func (c *%s) Render() string {
-	return "<div class=\"%s\"></div>"
-}
-`, name, name, name, name, name, kebab)
-		writeGeneratedFile(filePath, content)
-
-	case "page", "p":
-		filePath := filepath.Join("app", name, "page.go")
-		content := fmt.Sprintf(`package %s
-
-import (
-	"net/http"
-
-	"github.com/davidjeba/goscript/pkg/goscript"
-)
-
-func Page() goscript.Component {
-	return goscript.FunctionalComponent(func(props goscript.Props) string {
-		return "<div><h1>%s</h1></div>"
-	})
-}
-`, name, name)
-		writeGeneratedFile(filePath, content)
-
-	case "api":
-		filePath := filepath.Join("api", name, "route.go")
-		content := fmt.Sprintf(`package %s
-
-import (
-	"net/http"
-
-	"github.com/davidjeba/goscript/pkg/goscript"
-)
-
-func Handler(ctx *goscript.APIContext) (interface{}, error) {
-	return map[string]string{"message": "Hello from %%s"}, nil
-}
-`, name, name)
-		writeGeneratedFile(filePath, content)
-
-	default:
-		fmt.Printf("Unknown generate type: %s\n", generateType)
-		fmt.Println("Use: component, page, or api")
-	}
+        default:
+                fmt.Printf("Unknown command: %s\n", command)
+                printHelp()
+                os.Exit(1)
+        }
 }
 
-func writeGeneratedFile(path, content string) {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	if err := ioutil.WriteFile(path, []byte(content), 0644); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	fmt.Printf("  Generated %s\n", path)
-}
+func printHelp() {
+        help := `
+GOPM - Go Package Manager
 
-func deploy() {
-	fmt.Println("Deploying GoScript project...")
-	fmt.Println("  Target: production")
-	fmt.Println("  (deploy is a stub in GoScript 2.0)")
-}
+Usage: gopm [command] [options]
 
-func runLint() {
-	fmt.Println("Running linter...")
-	cmd := exec.Command("go", "vet", "./...")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Lint issues found\n")
-		os.Exit(1)
-	}
-	fmt.Println("No issues found")
-}
+Basic Commands:
+  get           Install packages
+  update        Update packages
+  clean         Clean project
+  run           Run a script
+  audit         Check for vulnerabilities
+  publish       Publish a package
+  version       Show version information
+  cache-clear   Clear the cache
+  list          List installed packages
+  verify        Verify package integrity
+  dedupe        Remove duplicate packages
+  prune         Remove unused packages
+  config        Manage configuration
+  help          Show help
+  auth          Authenticate with registry
+  setup         Setup project
+  sync          Sync dependencies
+  doctor        Diagnose and fix issues
+  migrate       Migrate to a new version
+  rollback      Rollback to a previous version
 
-func runTest() {
-	fmt.Println("Running tests...")
-	cmd := exec.Command("go", "test", "./...", "-v")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	_ = cmd.Run()
+Gocsx CSS Framework Commands:
+  css:build     Build CSS
+  css:watch     Watch and rebuild CSS
+  css:optimize  Optimize CSS
+  css:analyze   Analyze CSS usage
+  css:theme     Manage themes
+
+WebGPU and 3D Commands:
+  webgpu:init     Initialize WebGPU project
+  webgpu:build    Build WebGPU shaders
+  webgpu:optimize Optimize WebGPU performance
+  3d:scene        Create 3D scene
+  3d:model        Import 3D model
+  3d:export       Export 3D model
+  3d:optimize     Optimize 3D model
+  3d:convert      Convert between 3D formats
+
+2D Canvas Commands:
+  2d:init         Initialize 2D canvas project
+  2d:sprite       Create sprite
+  2d:animation    Create animation
+  2d:atlas        Create sprite atlas
+  2d:optimize     Optimize 2D canvas performance
+
+GoUIX Commands:
+  uix:init        Initialize UIX project
+  uix:component   Create UIX component
+  uix:test        Test UIX components
+  uix:storybook   Start UIX storybook
+  uix:build       Build UIX project
+
+GoScale API Commands:
+  api:init        Initialize API project
+  api:schema      Create API schema
+  api:deploy      Deploy API
+  api:edge        Deploy to edge network
+  api:test        Test API
+  api:doc         Generate API documentation
+
+GoScale DB Commands:
+  db:init         Initialize database
+  db:migrate      Run database migrations
+  db:seed         Seed database
+  db:backup       Backup database
+  db:restore      Restore database
+  db:schema       Create database schema
+  db:timeseries   Enable time series features
+
+Jetpack Performance Monitoring:
+  jetpack         Performance monitoring and optimization:
+    init          Initialize Jetpack
+    monitor       Monitor performance
+    lighthouse    Run Lighthouse audits
+    panel         Manage performance panel
+    metrics       Manage metrics
+    security      Security monitoring
+    export        Export metrics
+    report        Generate reports
+    chrome        Manage Chrome extension
+
+For more information, run: gopm help [command]
+`
+        fmt.Println(strings.TrimSpace(help))
 }
