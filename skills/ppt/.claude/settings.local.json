@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.npmjs.com)",
+      "WebSearch",
+      "Bash(node -e \"const pptx = require\\('pptxgenjs'\\); console.log\\(Object.keys\\(pptx.prototype || pptx\\).slice\\(0,5\\)\\); const p = new pptx\\(\\); console.log\\(p.presLayout\\); console.log\\(typeof p.ShapeType\\);\")",
+      "Bash(node:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}
