@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   Route,
-  Stream,
+  Waves,
   Server,
   Webhook,
   Layers,
@@ -32,7 +32,7 @@ import {
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Route,
-  Stream,
+  Waves,
   Server,
   Webhook,
   Layers,

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Menu, X, Go } from "lucide-react";
+import { Menu, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -66,7 +66,7 @@ export default function Home() {
               href="#hero"
               className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition-opacity"
             >
-              <Go className="h-5 w-5 text-emerald-500" />
+              <Terminal className="h-5 w-5 text-emerald-500" />
               <span>
                 Go<span className="text-emerald-500">Script</span>{" "}
                 <span className="text-muted-foreground/60 text-sm font-normal">2.0</span>
@@ -268,7 +268,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Go className="h-4 w-4 text-emerald-500" />
+              <Terminal className="h-4 w-4 text-emerald-500" />
               <span className="text-sm font-medium">
                 Go<span className="text-emerald-500">Script</span>{" "}
                 <span className="text-muted-foreground">2.0</span>
