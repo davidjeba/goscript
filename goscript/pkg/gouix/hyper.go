@@ -287,7 +287,7 @@ func (s *Store) Dispose() {
 
 // HyperComponent is a component that uses hyper(reactive) state
 type HyperComponent struct {
-        BaseComponent
+        *BaseComponent
         store *Store
 }
 
@@ -296,7 +296,7 @@ func NewHyperComponent(id ComponentID, props Props, initialState map[string]inte
         base := NewBaseComponent(id, props)
         
         return &HyperComponent{
-                BaseComponent: *base,
+                BaseComponent: base,
                 store:         NewStore(initialState),
         }
 }

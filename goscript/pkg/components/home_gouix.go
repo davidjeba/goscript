@@ -8,7 +8,7 @@ import (
 
 // GoUIXHomePage is the home page component
 type GoUIXHomePage struct {
-        gouix.BaseComponent
+        *gouix.BaseComponent
         counters      []*GoUIXCounter
         dragCounters  []*DraggableGoUIXCounter
         canvas        *gouix.Canvas
@@ -23,7 +23,7 @@ func NewGoUIXHomePage(id gouix.ComponentID, props gouix.Props) *GoUIXHomePage {
         
         // Create home page
         home := &GoUIXHomePage{
-                BaseComponent: *base,
+                BaseComponent: base,
                 counters:      make([]*GoUIXCounter, 0),
                 dragCounters:  make([]*DraggableGoUIXCounter, 0),
                 canvas:        canvas,

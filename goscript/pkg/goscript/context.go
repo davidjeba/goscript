@@ -98,7 +98,7 @@ func NewContextProvider(context *Context, key string, value interface{}, props P
                 key:     key,
                 value:   value,
         }
-        provider.LifecycleComponentBase.BaseComponent = *base
+        provider.LifecycleComponentBase.BaseComponent = base
         return provider
 }
 
@@ -142,7 +142,7 @@ func NewContextConsumer(context *Context, key string, render func(value interfac
                 key:     key,
                 render:  render,
         }
-        consumer.LifecycleComponentBase.BaseComponent = *base
+        consumer.LifecycleComponentBase.BaseComponent = base
         return consumer
 }
 

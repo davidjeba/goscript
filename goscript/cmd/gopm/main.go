@@ -18,14 +18,12 @@ package main
 
 import (
         "bufio"
-        "embed"
         "flag"
         "fmt"
         "io/fs"
         "log"
         "net/http"
         "os"
-        "os/exec"
         "path/filepath"
         "runtime"
         "strings"
@@ -144,21 +142,25 @@ func compileFile(inputPath string, f *compileFlags) int {
 
         // Compile: Lexer → Parser → Generator
         lexer := gscompiler.NewLexer(string(src))
-        tokens := lexer.Tokenize()
-        if tokens == nil {
-                fmt.Fprintf(os.Stderr, "Error: lexer returned no tokens for %s\n", inputPath)
+        tokens, lexErr := lexer.Tokenize()
+        if lexErr != nil {
+                fmt.Fprintf(os.Stderr, "Error: lexer failed for %s: %v\n", inputPath, lexErr)
                 return exitCompile
         }
 
         parser := gscompiler.NewParser(tokens)
-        program := parser.Parse()
-        if program == nil {
-                fmt.Fprintf(os.Stderr, "Error: parser returned nil program for %s\n", inputPath)
+        program, parseErr := parser.Parse()
+        if parseErr != nil {
+                fmt.Fprintf(os.Stderr, "Error: parser failed for %s: %v\n", inputPath, parseErr)
                 return exitCompile
         }
 
         generator := gscompiler.NewGenerator()
-        jsOutput := generator.Generate(program)
+        jsOutput, genErr := generator.Generate(program)
+        if genErr != nil {
+                fmt.Fprintf(os.Stderr, "Error: code generation failed for %s: %v\n", inputPath, genErr)
+                return exitCompile
+        }
 
         if f.minify {
                 jsOutput = minifyJS(jsOutput)
@@ -340,7 +342,7 @@ func cmdDev(args []string) int {
   ║     gopm dev server                  ║
   ║     GoScript %s                     ║
   ╠═══════════════════════════════════════╣
-  ║  Local:  http://localhost:%-12s ║
+  ║  Local:  http://localhost:%-12d ║
   ║  HMR:    %s%-28s ║
   ║  Files:  %-30s ║
   ╚═══════════════════════════════════════╝
@@ -522,7 +524,7 @@ func cmdInit(args []string) int {
         }
 
         // Write main.go
-        mainGo := fmt.Sprintf(mainTemplate, name)
+        mainGo := mainTemplate
         if err := os.WriteFile(filepath.Join(projectDir, "main.go"), []byte(mainGo), 0644); err != nil {
                 fmt.Fprintf(os.Stderr, "Error writing main.go: %v\n", err)
                 return exitInit
@@ -644,19 +646,22 @@ func compileGSToJS(path string) (string, error) {
         }
 
         lexer := gscompiler.NewLexer(string(src))
-        tokens := lexer.Tokenize()
-        if tokens == nil {
-                return "", fmt.Errorf("lexer produced no tokens for %s", path)
+        tokens, lexErr := lexer.Tokenize()
+        if lexErr != nil {
+                return "", fmt.Errorf("lexer failed for %s: %v", path, lexErr)
         }
 
         parser := gscompiler.NewParser(tokens)
-        program := parser.Parse()
-        if program == nil {
-                return "", fmt.Errorf("parser produced no AST for %s", path)
+        program, parseErr := parser.Parse()
+        if parseErr != nil {
+                return "", fmt.Errorf("parser failed for %s: %v", path, parseErr)
         }
 
         generator := gscompiler.NewGenerator()
-        js := generator.Generate(program)
+        js, genErr := generator.Generate(program)
+        if genErr != nil {
+                return "", fmt.Errorf("code generation failed for %s: %v", path, genErr)
+        }
 
         return js, nil
 }

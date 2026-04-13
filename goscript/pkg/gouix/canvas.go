@@ -25,7 +25,7 @@ type CanvasContext struct {
 
 // BaseCanvasElement provides a basic implementation of CanvasElement
 type BaseCanvasElement struct {
-        BaseComponent
+        *BaseComponent
         shape     string // "rect", "circle", "path", etc.
         fillStyle string
         strokeStyle string
@@ -44,7 +44,7 @@ func NewCanvasElement(id ComponentID, shape string, props Props) *BaseCanvasElem
         base.EnableDrag(nil)
         
         return &BaseCanvasElement{
-                BaseComponent: *base,
+                BaseComponent: base,
                 shape:         shape,
                 fillStyle:     "#000000",
                 strokeStyle:   "#000000",
@@ -137,7 +137,7 @@ func (c *BaseCanvasElement) generateEventAttributes() string {
 
 // Canvas is a container for canvas elements
 type Canvas struct {
-        BaseComponent
+        *BaseComponent
         elements []CanvasElement
         width    int
         height   int
@@ -156,7 +156,7 @@ func NewCanvas(id ComponentID, width, height int, props Props) *Canvas {
         base := NewBaseComponent(id, props)
         
         return &Canvas{
-                BaseComponent: *base,
+                BaseComponent: base,
                 elements:      make([]CanvasElement, 0),
                 width:         width,
                 height:        height,

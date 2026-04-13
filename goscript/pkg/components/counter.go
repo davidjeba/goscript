@@ -39,7 +39,7 @@ func NewCounter(props goscript.Props) *Counter {
         
         // Create counter component
         counter := &Counter{}
-        counter.LifecycleComponentBase.BaseComponent = *base
+        counter.LifecycleComponentBase.BaseComponent = base
         
         // Initialize count from props
         initialCount, _ := props["initialCount"].(int)

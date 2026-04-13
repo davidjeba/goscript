@@ -9,10 +9,10 @@
 package goscript
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strings"
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "strings"
 )
 
 // =========================================================================
@@ -22,18 +22,18 @@ import (
 // responseConfig holds all options for a goscript response. It is built
 // incrementally via ResponseOption functions.
 type responseConfig struct {
-	retarget  string                 // Override the target element for this swap
-	reswap    string                 // Override the swap strategy
-	triggers  []triggerEntry         // Client-side events to fire after swap
-	pushURL   string                 // URL to push into browser history
-	state     map[string]interface{} // State values to sync to the client
-	retrigger bool                   // Whether to reprocess reactive elements
+        retarget  string                 // Override the target element for this swap
+        reswap    string                 // Override the swap strategy
+        triggers  []triggerEntry         // Client-side events to fire after swap
+        pushURL   string                 // URL to push into browser history
+        state     map[string]interface{} // State values to sync to the client
+        retrigger bool                   // Whether to reprocess reactive elements
 }
 
 // triggerEntry represents a client-side event to fire.
 type triggerEntry struct {
-	Name   string      `json:"name"`   // Event name (e.g. "cart:updated")
-	Detail interface{} `json:"detail"` // Event payload
+        Name   string      `json:"name"`   // Event name (e.g. "cart:updated")
+        Detail interface{} `json:"detail"` // Event payload
 }
 
 // =========================================================================
@@ -50,11 +50,11 @@ type ResponseOption func(*responseConfig)
 //
 // Usage:
 //
-//	GoscriptResponse(w, "<div>Updated!</div>", WithRetarget("#sidebar"))
+//      GoscriptResponse(w, "<div>Updated!</div>", WithRetarget("#sidebar"))
 func WithRetarget(target string) ResponseOption {
-	return func(c *responseConfig) {
-		c.retarget = target
-	}
+        return func(c *responseConfig) {
+                c.retarget = target
+        }
 }
 
 // WithReswap overrides the swap strategy for this response. When set, the
@@ -63,11 +63,11 @@ func WithRetarget(target string) ResponseOption {
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithReswap(SwapOuterHTML))
+//      GoscriptResponse(w, html, WithReswap(SwapOuterHTML))
 func WithReswap(strategy string) ResponseOption {
-	return func(c *responseConfig) {
-		c.reswap = strategy
-	}
+        return func(c *responseConfig) {
+                c.reswap = strategy
+        }
 }
 
 // WithTrigger fires a client-side event after the swap is complete. The
@@ -76,26 +76,26 @@ func WithReswap(strategy string) ResponseOption {
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithTrigger("item:added", itemID))
+//      GoscriptResponse(w, html, WithTrigger("item:added", itemID))
 func WithTrigger(eventName string, detail interface{}) ResponseOption {
-	return func(c *responseConfig) {
-		c.triggers = append(c.triggers, triggerEntry{
-			Name:   eventName,
-			Detail: detail,
-		})
-	}
+        return func(c *responseConfig) {
+                c.triggers = append(c.triggers, triggerEntry{
+                        Name:   eventName,
+                        Detail: detail,
+                })
+        }
 }
 
-// WithPushURL pushes a URL into the browser's history after the swap.
+// WithPushURLHeader pushes a URL into the browser's history after the swap.
 // This enables SPA-like navigation without JavaScript.
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithPushURL("/users/42"))
-func WithPushURL(url string) ResponseOption {
-	return func(c *responseConfig) {
-		c.pushURL = url
-	}
+//      GoscriptResponse(w, html, WithPushURLHeader("/users/42"))
+func WithPushURLHeader(url string) ResponseOption {
+        return func(c *responseConfig) {
+                c.pushURL = url
+        }
 }
 
 // WithState syncs a single server-side state value to the client runtime.
@@ -103,14 +103,14 @@ func WithPushURL(url string) ResponseOption {
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithState("cartCount", 3))
+//      GoscriptResponse(w, html, WithState("cartCount", 3))
 func WithState(key string, value interface{}) ResponseOption {
-	return func(c *responseConfig) {
-		if c.state == nil {
-			c.state = make(map[string]interface{})
-		}
-		c.state[key] = value
-	}
+        return func(c *responseConfig) {
+                if c.state == nil {
+                        c.state = make(map[string]interface{})
+                }
+                c.state[key] = value
+        }
 }
 
 // WithStateMap syncs multiple state values to the client runtime at once.
@@ -118,19 +118,19 @@ func WithState(key string, value interface{}) ResponseOption {
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithStateMap(map[string]interface{}{
-//	    "cartCount": 3,
-//	    "userLevel": "premium",
-//	}))
+//      GoscriptResponse(w, html, WithStateMap(map[string]interface{}{
+//          "cartCount": 3,
+//          "userLevel": "premium",
+//      }))
 func WithStateMap(state map[string]interface{}) ResponseOption {
-	return func(c *responseConfig) {
-		if c.state == nil {
-			c.state = make(map[string]interface{})
-		}
-		for k, v := range state {
-			c.state[k] = v
-		}
-	}
+        return func(c *responseConfig) {
+                if c.state == nil {
+                        c.state = make(map[string]interface{})
+                }
+                for k, v := range state {
+                        c.state[k] = v
+                }
+        }
 }
 
 // WithRetrigger tells the client runtime to reprocess reactive elements
@@ -139,11 +139,11 @@ func WithStateMap(state map[string]interface{}) ResponseOption {
 //
 // Usage:
 //
-//	GoscriptResponse(w, html, WithRetrigger(true))
+//      GoscriptResponse(w, html, WithRetrigger(true))
 func WithRetrigger(retrigger bool) ResponseOption {
-	return func(c *responseConfig) {
-		c.retrigger = retrigger
-	}
+        return func(c *responseConfig) {
+                c.retrigger = retrigger
+        }
 }
 
 // =========================================================================
@@ -161,60 +161,60 @@ func WithRetrigger(retrigger bool) ResponseOption {
 //
 // Usage:
 //
-//	func handleUserList(w http.ResponseWriter, r *http.Request) {
-//	    users := getUserList()
-//	    html := renderUserList(users)
-//	    GoscriptResponse(w, html, WithRetarget("#user-list"))
-//	}
+//      func handleUserList(w http.ResponseWriter, r *http.Request) {
+//          users := getUserList()
+//          html := renderUserList(users)
+//          GoscriptResponse(w, html, WithRetarget("#user-list"))
+//      }
 func GoscriptResponse(w http.ResponseWriter, html string, opts ...ResponseOption) {
-	// Build config from options
-	cfg := &responseConfig{}
-	for _, opt := range opts {
-		opt(cfg)
-	}
+        // Build config from options
+        cfg := &responseConfig{}
+        for _, opt := range opts {
+                opt(cfg)
+        }
 
-	// Set content type
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        // Set content type
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// Set GS-Retarget if overridden
-	if cfg.retarget != "" {
-		w.Header().Set("GS-Retarget", cfg.retarget)
-	}
+        // Set GS-Retarget if overridden
+        if cfg.retarget != "" {
+                w.Header().Set("GS-Retarget", cfg.retarget)
+        }
 
-	// Set GS-Reswap if overridden
-	if cfg.reswap != "" {
-		w.Header().Set("GS-Reswap", cfg.reswap)
-	}
+        // Set GS-Reswap if overridden
+        if cfg.reswap != "" {
+                w.Header().Set("GS-Reswap", cfg.reswap)
+        }
 
-	// Set GS-Trigger if events are specified
-	if len(cfg.triggers) > 0 {
-		triggerJSON, err := json.Marshal(cfg.triggers)
-		if err == nil {
-			w.Header().Set("GS-Trigger", string(triggerJSON))
-		}
-	}
+        // Set GS-Trigger if events are specified
+        if len(cfg.triggers) > 0 {
+                triggerJSON, err := json.Marshal(cfg.triggers)
+                if err == nil {
+                        w.Header().Set("GS-Trigger", string(triggerJSON))
+                }
+        }
 
-	// Set GS-Push-URL if specified
-	if cfg.pushURL != "" {
-		w.Header().Set("GS-Push-Url", cfg.pushURL)
-	}
+        // Set GS-Push-URL if specified
+        if cfg.pushURL != "" {
+                w.Header().Set("GS-Push-Url", cfg.pushURL)
+        }
 
-	// Set GS-State if state values are provided
-	if len(cfg.state) > 0 {
-		stateJSON, err := json.Marshal(cfg.state)
-		if err == nil {
-			w.Header().Set("GS-State", string(stateJSON))
-		}
-	}
+        // Set GS-State if state values are provided
+        if len(cfg.state) > 0 {
+                stateJSON, err := json.Marshal(cfg.state)
+                if err == nil {
+                        w.Header().Set("GS-State", string(stateJSON))
+                }
+        }
 
-	// Set GS-Retrigger header
-	if cfg.retrigger {
-		w.Header().Set("GS-Retrigger", "true")
-	}
+        // Set GS-Retrigger header
+        if cfg.retrigger {
+                w.Header().Set("GS-Retrigger", "true")
+        }
 
-	// Write the HTML body
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, html)
+        // Write the HTML body
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprint(w, html)
 }
 
 // GoscriptRedirect sends a client-side redirect response. The client
@@ -222,12 +222,12 @@ func GoscriptResponse(w http.ResponseWriter, html string, opts ...ResponseOption
 //
 // Usage:
 //
-//	GoscriptRedirect(w, "/login")
+//      GoscriptRedirect(w, "/login")
 func GoscriptRedirect(w http.ResponseWriter, url string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("GS-Redirect", url)
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "")
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        w.Header().Set("GS-Redirect", url)
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprint(w, "")
 }
 
 // GoscriptRefresh sends a response that triggers a full page refresh
@@ -235,12 +235,12 @@ func GoscriptRedirect(w http.ResponseWriter, url string) {
 //
 // Usage:
 //
-//	GoscriptRefresh(w)
+//      GoscriptRefresh(w)
 func GoscriptRefresh(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("GS-Refresh", "true")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "")
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        w.Header().Set("GS-Refresh", "true")
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprint(w, "")
 }
 
 // GoscriptTrigger sends a trigger-only response (no content swap).
@@ -249,24 +249,24 @@ func GoscriptRefresh(w http.ResponseWriter) {
 //
 // Usage:
 //
-//	GoscriptTrigger(w, "notification", map[string]string{
-//	    "message": "Data saved successfully",
-//	    "type":    "success",
-//	})
+//      GoscriptTrigger(w, "notification", map[string]string{
+//          "message": "Data saved successfully",
+//          "type":    "success",
+//      })
 func GoscriptTrigger(w http.ResponseWriter, event string, detail interface{}) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// Build trigger entry and marshal to JSON
-	trigger := triggerEntry{
-		Name:   event,
-		Detail: detail,
-	}
-	triggerJSON, err := json.Marshal(trigger)
-	if err == nil {
-		w.Header().Set("GS-Trigger", string(triggerJSON))
-	}
+        // Build trigger entry and marshal to JSON
+        trigger := triggerEntry{
+                Name:   event,
+                Detail: detail,
+        }
+        triggerJSON, err := json.Marshal(trigger)
+        if err == nil {
+                w.Header().Set("GS-Trigger", string(triggerJSON))
+        }
 
-	w.WriteHeader(http.StatusNoContent)
+        w.WriteHeader(http.StatusNoContent)
 }
 
 // =========================================================================
@@ -282,42 +282,42 @@ func GoscriptTrigger(w http.ResponseWriter, event string, detail interface{}) {
 //
 // Usage:
 //
-//	batch := NewBatchResponse(w)
-//	batch.Swap("#user-list", renderUsers(users), SwapInnerHTML).
-//	    Swap("#user-count", fmt.Sprintf("%d users", len(users)), SwapInnerHTML).
-//	    Trigger("users:loaded", nil).
-//	    Send()
+//      batch := NewBatchResponse(w)
+//      batch.Swap("#user-list", renderUsers(users), SwapInnerHTML).
+//          Swap("#user-count", fmt.Sprintf("%d users", len(users)), SwapInnerHTML).
+//          Trigger("users:loaded", nil).
+//          Send()
 type BatchResponse struct {
-	writer   http.ResponseWriter
-	swaps    []swapEntry
-	triggers []triggerEntry
-	state    map[string]interface{}
-	pushURL  string
+        writer   http.ResponseWriter
+        swaps    []swapEntry
+        triggers []triggerEntry
+        state    map[string]interface{}
+        pushURL  string
 }
 
 // swapEntry represents a single DOM swap operation in a batch.
 type swapEntry struct {
-	Target   string `json:"target"`   // CSS selector for the swap target
-	Content  string `json:"content"`  // HTML content to swap
-	Strategy string `json:"strategy"` // Swap strategy (innerHTML, outerHTML, etc.)
+        Target   string `json:"target"`   // CSS selector for the swap target
+        Content  string `json:"content"`  // HTML content to swap
+        Strategy string `json:"strategy"` // Swap strategy (innerHTML, outerHTML, etc.)
 }
 
 // batchResponseBody is the JSON structure sent to the client.
 type batchResponseBody struct {
-	Swaps   []swapEntry            `json:"swaps"`
-	Triggers []triggerEntry        `json:"triggers,omitempty"`
-	State    map[string]interface{} `json:"state,omitempty"`
-	PushURL  string                `json:"pushUrl,omitempty"`
+        Swaps   []swapEntry            `json:"swaps"`
+        Triggers []triggerEntry        `json:"triggers,omitempty"`
+        State    map[string]interface{} `json:"state,omitempty"`
+        PushURL  string                `json:"pushUrl,omitempty"`
 }
 
 // NewBatchResponse creates a new batch response builder for the given
 // HTTP response writer.
 func NewBatchResponse(w http.ResponseWriter) *BatchResponse {
-	return &BatchResponse{
-		writer: w,
-		swaps:  make([]swapEntry, 0),
-		state:  make(map[string]interface{}),
-	}
+        return &BatchResponse{
+                writer: w,
+                swaps:  make([]swapEntry, 0),
+                state:  make(map[string]interface{}),
+        }
 }
 
 // Swap adds a DOM swap to the batch. The response HTML will be swapped
@@ -325,14 +325,14 @@ func NewBatchResponse(w http.ResponseWriter) *BatchResponse {
 //
 // Usage:
 //
-//	batch.Swap("#user-list", userHTML, SwapInnerHTML)
+//      batch.Swap("#user-list", userHTML, SwapInnerHTML)
 func (b *BatchResponse) Swap(target, content, strategy string) *BatchResponse {
-	b.swaps = append(b.swaps, swapEntry{
-		Target:   target,
-		Content:  content,
-		Strategy: strategy,
-	})
-	return b
+        b.swaps = append(b.swaps, swapEntry{
+                Target:   target,
+                Content:  content,
+                Strategy: strategy,
+        })
+        return b
 }
 
 // SwapComponent targets a component by name using the component:name
@@ -340,9 +340,9 @@ func (b *BatchResponse) Swap(target, content, strategy string) *BatchResponse {
 //
 // Usage:
 //
-//	batch.SwapComponent("navbar", navHTML, SwapInnerHTML)
+//      batch.SwapComponent("navbar", navHTML, SwapInnerHTML)
 func (b *BatchResponse) SwapComponent(name, content, strategy string) *BatchResponse {
-	return b.Swap(fmt.Sprintf("[data-goscript-component=\"%s\"]", name), content, strategy)
+        return b.Swap(fmt.Sprintf("[data-goscript-component=\"%s\"]", name), content, strategy)
 }
 
 // Trigger adds a client-side event trigger to the batch. The event will
@@ -350,13 +350,13 @@ func (b *BatchResponse) SwapComponent(name, content, strategy string) *BatchResp
 //
 // Usage:
 //
-//	batch.Trigger("cart:updated", map[string]int{"count": newCount})
+//      batch.Trigger("cart:updated", map[string]int{"count": newCount})
 func (b *BatchResponse) Trigger(event string, detail interface{}) *BatchResponse {
-	b.triggers = append(b.triggers, triggerEntry{
-		Name:   event,
-		Detail: detail,
-	})
-	return b
+        b.triggers = append(b.triggers, triggerEntry{
+                Name:   event,
+                Detail: detail,
+        })
+        return b
 }
 
 // State syncs a state key-value pair to the client. The client runtime
@@ -364,10 +364,10 @@ func (b *BatchResponse) Trigger(event string, detail interface{}) *BatchResponse
 //
 // Usage:
 //
-//	batch.State("cartCount", 5)
+//      batch.State("cartCount", 5)
 func (b *BatchResponse) State(key string, value interface{}) *BatchResponse {
-	b.state[key] = value
-	return b
+        b.state[key] = value
+        return b
 }
 
 // PushURL sets a URL to push into the browser history after the batch
@@ -375,41 +375,41 @@ func (b *BatchResponse) State(key string, value interface{}) *BatchResponse {
 //
 // Usage:
 //
-//	batch.PushURL("/products/42")
+//      batch.PushURL("/products/42")
 func (b *BatchResponse) PushURL(url string) *BatchResponse {
-	b.pushURL = url
-	return b
+        b.pushURL = url
+        return b
 }
 
 // Send serializes all batch operations into a JSON response and writes it
 // to the HTTP response writer. The client runtime parses this JSON and
 // applies each operation sequentially.
 func (b *BatchResponse) Send() {
-	body := batchResponseBody{
-		Swaps:   b.swaps,
-		Triggers: b.triggers,
-		State:    b.state,
-		PushURL:  b.pushURL,
-	}
+        body := batchResponseBody{
+                Swaps:   b.swaps,
+                Triggers: b.triggers,
+                State:    b.state,
+                PushURL:  b.pushURL,
+        }
 
-	// Remove empty fields
-	if len(body.Triggers) == 0 {
-		body.Triggers = nil
-	}
-	if len(body.State) == 0 {
-		body.State = nil
-	}
+        // Remove empty fields
+        if len(body.Triggers) == 0 {
+                body.Triggers = nil
+        }
+        if len(body.State) == 0 {
+                body.State = nil
+        }
 
-	bodyJSON, err := json.Marshal(body)
-	if err != nil {
-		http.Error(b.writer, "failed to serialize batch response", http.StatusInternalServerError)
-		return
-	}
+        bodyJSON, err := json.Marshal(body)
+        if err != nil {
+                http.Error(b.writer, "failed to serialize batch response", http.StatusInternalServerError)
+                return
+        }
 
-	b.writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	b.writer.Header().Set("GS-Batch", "true")
-	b.writer.WriteHeader(http.StatusOK)
-	b.writer.Write(bodyJSON)
+        b.writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+        b.writer.Header().Set("GS-Batch", "true")
+        b.writer.WriteHeader(http.StatusOK)
+        b.writer.Write(bodyJSON)
 }
 
 // =========================================================================
@@ -426,10 +426,10 @@ func (b *BatchResponse) Send() {
 //
 // Usage:
 //
-//	fmt.Println(RenderGoScriptTag())
-//	// Output: <script src="/__goscript/runtime.js"></script>
+//      fmt.Println(RenderGoScriptTag())
+//      // Output: <script src="/__goscript/runtime.js"></script>
 func RenderGoScriptTag() string {
-	return `<script src="/__goscript/runtime.js"></script>`
+        return `<script src="/__goscript/runtime.js"></script>`
 }
 
 // RenderGoScriptTagAsync generates an async/deferred script tag for the
@@ -438,10 +438,10 @@ func RenderGoScriptTag() string {
 //
 // Usage:
 //
-//	fmt.Println(RenderGoScriptTagAsync())
-//	// Output: <script src="/__goscript/runtime.js" async></script>
+//      fmt.Println(RenderGoScriptTagAsync())
+//      // Output: <script src="/__goscript/runtime.js" async></script>
 func RenderGoScriptTagAsync() string {
-	return `<script src="/__goscript/runtime.js" async></script>`
+        return `<script src="/__goscript/runtime.js" async></script>`
 }
 
 // RenderGoScriptTagDefer generates a deferred script tag for the goscript
@@ -450,10 +450,10 @@ func RenderGoScriptTagAsync() string {
 //
 // Usage:
 //
-//	fmt.Println(RenderGoScriptTagDefer())
-//	// Output: <script src="/__goscript/runtime.js" defer></script>
+//      fmt.Println(RenderGoScriptTagDefer())
+//      // Output: <script src="/__goscript/runtime.js" defer></script>
 func RenderGoScriptTagDefer() string {
-	return `<script src="/__goscript/runtime.js" defer></script>`
+        return `<script src="/__goscript/runtime.js" defer></script>`
 }
 
 // RenderHydrationScript generates the script tag that embeds server-side
@@ -465,18 +465,18 @@ func RenderGoScriptTagDefer() string {
 //
 // Usage:
 //
-//	state := map[string]interface{}{"count": 0, "user": "alice"}
-//	fmt.Println(RenderHydrationScript(state))
-//	// Output: <script>window.__GOSCRIPT_STATE__={"count":0,"user":"alice"}</script>
+//      state := map[string]interface{}{"count": 0, "user": "alice"}
+//      fmt.Println(RenderHydrationScript(state))
+//      // Output: <script>window.__GOSCRIPT_STATE__={"count":0,"user":"alice"}</script>
 func RenderHydrationScript(state map[string]interface{}) string {
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-	stateJSON, err := json.Marshal(state)
-	if err != nil {
-		stateJSON = []byte("{}")
-	}
-	return fmt.Sprintf(`<script>window.__GOSCRIPT_STATE__=%s</script>`, string(stateJSON))
+        if state == nil {
+                state = make(map[string]interface{})
+        }
+        stateJSON, err := json.Marshal(state)
+        if err != nil {
+                stateJSON = []byte("{}")
+        }
+        return fmt.Sprintf(`<script>window.__GOSCRIPT_STATE__=%s</script>`, string(stateJSON))
 }
 
 // =========================================================================
@@ -488,9 +488,9 @@ func RenderHydrationScript(state map[string]interface{}) string {
 //
 // Usage:
 //
-//	SetGSHeader(w, "GS-Custom", "some-value")
+//      SetGSHeader(w, "GS-Custom", "some-value")
 func SetGSHeader(w http.ResponseWriter, key, value string) {
-	w.Header().Set(key, value)
+        w.Header().Set(key, value)
 }
 
 // IsGSRequest checks whether an incoming request was made by the goscript
@@ -498,13 +498,13 @@ func SetGSHeader(w http.ResponseWriter, key, value string) {
 //
 // Usage:
 //
-//	if IsGSRequest(r) {
-//	    // This is a reactive request — return HTML fragment
-//	} else {
-//	    // This is a normal request — return full page
-//	}
+//      if IsGSRequest(r) {
+//          // This is a reactive request — return HTML fragment
+//      } else {
+//          // This is a normal request — return full page
+//      }
 func IsGSRequest(r *http.Request) bool {
-	return r.Header.Get("GS-Request") == "true"
+        return r.Header.Get("GS-Request") == "true"
 }
 
 // WantsHTML checks whether the client prefers an HTML response. This is
@@ -512,17 +512,17 @@ func IsGSRequest(r *http.Request) bool {
 //
 // Usage:
 //
-//	if WantsHTML(r) {
-//	    GoscriptResponse(w, renderHTML(data))
-//	} else {
-//	    json.NewEncoder(w).Encode(data)
-//	}
+//      if WantsHTML(r) {
+//          GoscriptResponse(w, renderHTML(data))
+//      } else {
+//          json.NewEncoder(w).Encode(data)
+//      }
 func WantsHTML(r *http.Request) bool {
-	// Check GS-Request header (set by runtime)
-	if IsGSRequest(r) {
-		return true
-	}
-	// Check Accept header
-	accept := r.Header.Get("Accept")
-	return strings.Contains(accept, "text/html")
+        // Check GS-Request header (set by runtime)
+        if IsGSRequest(r) {
+                return true
+        }
+        // Check Accept header
+        accept := r.Header.Get("Accept")
+        return strings.Contains(accept, "text/html")
 }

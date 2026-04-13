@@ -215,7 +215,7 @@ func (b *Bundler) buildBundle(gsFiles []string) (*Bundle, error) {
 
         // If every file failed, return the first error
         if len(compileErrors) == len(gsFiles) {
-                return nil, fmt.Errorf("all files failed to compile; first error: %w", compileErrors[0])
+                return nil, fmt.Errorf("all files failed to compile; first error: %v", compileErrors[0])
         }
 
         // Phase 2: Resolve imports (collect stdlib references across all files)
