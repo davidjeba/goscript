@@ -1,21 +1,21 @@
-# GoScript: A Comprehensive Web Development Framework
+# GoScript: Go Native, Web Ready
 
-GoScript is a full-stack web development framework written in Go, designed to provide a complete solution for building modern web, mobile, and AR/VR applications. It combines the performance of Go with the flexibility of modern web technologies, offering a unified approach to frontend, backend, and database development.
+GoScript is a Go-native language and application platform for building modern web experiences without handing the language layer to JavaScript. It keeps a familiar app structure for people who know modern web frameworks, but it is not a Next.js replacement. GoScript is the Go community's path to a first-class web stack in Go.
 
 [![GitHub stars](https://img.shields.io/github/stars/davidjeba/goscript?style=social)](https://github.com/davidjeba/goscript/stargazers)
 [![GitHub license](https://img.shields.io/github/license/davidjeba/goscript)](https://github.com/davidjeba/goscript/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/davidjeba/goscript)](https://goreportcard.com/report/github.com/davidjeba/goscript)
 [![GoDoc](https://godoc.org/github.com/davidjeba/goscript?status.svg)](https://godoc.org/github.com/davidjeba/goscript)
 
-GoScript aims to be the most comprehensive Go-based web development framework, combining the best features of modern web frameworks with the performance and type safety of Go. It provides a complete solution for building web applications, from frontend to backend, with built-in support for CSS, 3D rendering, API development, database integration, and performance monitoring.
+GoScript aims to give Go developers a single language across product logic, UI logic, and backend logic. The project includes language tooling, runtime primitives, rendering systems, API support, database integration, and performance tooling, all shaped around Go instead of JavaScript.
 
 ## 🌟 Core Components
 
 GoScript consists of several integrated components that work together to provide a complete development experience:
 
-### 1. Full-Stack Web Framework
+### 1. Go-Native Language Layer
 
-GoScript provides a familiar experience for TypeScript and React developers:
+GoScript provides a familiar app structure for developers coming from modern web frameworks, but the core idea is language ownership:
 
 - **Enhanced Component System**
   - Class-based components with lifecycle methods
@@ -28,18 +28,18 @@ GoScript provides a familiar experience for TypeScript and React developers:
   - Fragment support
   - Component testing utilities
 
-- **Core Framework Features**
+- **Core Platform Features**
   - Server-side rendering (SSR)
   - Client-side hydration
   - Global state management
   - Routing with middleware support
   - Static asset management
   - Hot-reloading for development
-  - CLI for component generation
+  - CLI for language and project tooling
 
-### 2. Gocsx: Utility-First CSS Framework
+### 2. Gocsx: Utility-First CSS for Go
 
-Gocsx is a Tailwind-inspired CSS framework that provides a utility-first approach to styling web applications. It includes:
+Gocsx is a Tailwind-inspired CSS system that lets GoScript and Go projects style interfaces without leaving Go-centric tooling. It includes:
 
 - **Utility Classes**: A comprehensive set of utility classes for rapid UI development
 - **Component System**: Pre-built components with variants and responsive design
@@ -378,7 +378,7 @@ func main() {
 
 ## 🏗️ Architecture
 
-GoScript follows a modular architecture that allows each component to be used independently or together as a complete framework:
+GoScript follows a modular architecture that allows each component to be used independently or together as a complete platform:
 
 ```
 GoScript
@@ -489,17 +489,27 @@ GoScript uses a unified configuration approach across all components:
 
 ## 📋 Feature Comparison
 
+### GoScript vs JavaScript
+
+- **Language**: GoScript is Go-native, JavaScript is the browser's native language and ecosystem.
+- **Team workflow**: GoScript keeps product logic and UI logic in one Go mental model.
+- **Performance**: GoScript inherits Go's compiled, predictable runtime characteristics.
+- **Type safety**: GoScript benefits from Go's compile-time guarantees and explicitness.
+- **Deployment**: GoScript fits a Go-shaped delivery story instead of a JS package graph.
+- **Ownership**: Go teams stay in one language instead of splitting the product across Go and JS/TS.
+- **Best fit**: GoScript is for teams that want the web to feel native to Go.
+
 ### GoScript vs React
 
-- **Language**: GoScript uses Go, React uses JavaScript/TypeScript
-- **Performance**: GoScript offers better performance due to Go's efficiency
-- **Type Safety**: GoScript has stronger type safety through Go's type system
-- **Learning Curve**: Familiar API for React developers, but requires Go knowledge
-- **Ecosystem**: React has a larger ecosystem, but GoScript integrates with Go libraries
-- **CSS Framework**: GoScript includes Gocsx, React requires external libraries
-- **3D Rendering**: GoScript includes WebGPU integration, React requires external libraries
-- **API System**: GoScript includes GoScale, React requires external libraries
-- **Performance Monitoring**: GoScript includes Jetpack, React requires external libraries
+- **Language**: GoScript uses Go, React uses JavaScript/TypeScript.
+- **Performance**: GoScript offers better performance due to Go's efficiency.
+- **Type Safety**: GoScript has stronger type safety through Go's type system.
+- **Learning Curve**: Familiar app structure for React developers, but grounded in Go.
+- **Ecosystem**: React has a larger ecosystem, while GoScript integrates with Go libraries.
+- **CSS Framework**: GoScript includes Gocsx, React requires external libraries.
+- **3D Rendering**: GoScript includes WebGPU integration, React requires external libraries.
+- **API System**: GoScript includes GoScale, React requires external libraries.
+- **Performance Monitoring**: GoScript includes Jetpack, React requires external libraries.
 
 ### Gocsx vs Tailwind CSS
 
@@ -516,6 +526,12 @@ GoScript uses a unified configuration approach across all components:
 - **Performance**: GoScript can achieve better performance through Go
 - **Type Safety**: GoScript has stronger type safety
 - **Features**: Three.js has more features currently, but GoScript is rapidly evolving
+
+## Why GoScript Matters
+
+GoScript matters because it gives the Go community a native blessing: a way to build modern web apps without asking every team member to learn a second language just to ship the frontend.
+
+That means less context switching, fewer seams between backend and UI, and more of the product living in the language Go developers already trust. The point is not to replace JavaScript in the browser. The point is to let Go teams own more of the stack in Go, with the same clarity and discipline that made them choose Go in the first place.
 
 ## 🔄 Roadmap
 
