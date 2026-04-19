@@ -1,6 +1,6 @@
-# GoScript 2.0 — The Go-native Web Framework
+# GoScript - The Go-native Language for the Web
 
-GoScript is a full-stack web framework written entirely in Go. It features its own language (**.gs** files that compile to browser JavaScript), reactive HTML attributes for zero-JS interactivity, an App Router with layouts and dynamic segments, and a comprehensive middleware pipeline — all compiled to a single static binary.
+GoScript is a Go-native language and runtime for building web apps without splitting the product across Go and JavaScript. It follows a familiar app structure for people coming from modern web frameworks, but its real purpose is different: GoScript gives Go developers a native path to the web.
 
 ## Quick Start
 
@@ -321,28 +321,22 @@ Run: `go run examples/counter/main.go`
 
 ---
 
-## GoScript vs Next.js
+## GoScript vs JavaScript
 
-| Concern | GoScript | Next.js |
+GoScript is not a Next.js replacement. The familiar app structure is there to reduce learning curve, but the actual comparison that matters is language ownership.
+
+| Concern | GoScript | JavaScript |
 |---|---|---|
-| **Language** | Go — compiled, memory-safe | TypeScript — interpreted/JIT |
-| **Deployment** | Single binary, zero dependencies | Node.js runtime required |
-| **Startup** | Milliseconds | Seconds |
-| **Memory** | ~20MB typical | ~200MB+ typical |
-| **Concurrency** | Goroutines (millions) | Event loop (single-threaded) |
-| **Type Safety** | Compile-time generics (Go 1.22) | TypeScript (optional) |
-| **Binary Size** | ~10MB static | ~100MB+ node_modules |
-| **Own Language** | .gs → browser JavaScript | JSX/TSX |
-| **Reactivity** | gs-* HTML attributes (zero JS) | React state/hooks |
-| **SSR** | Streaming SSR with Suspense | Streaming SSR with Suspense |
-| **API Routes** | Built-in with rate limit/auth | Route Handlers |
-| **Middleware** | Composable pipeline | edge/middleware.ts |
-| **SSG/ISR** | Built-in | Built-in |
-| **CSS** | Gocsx built-in | Tailwind (external) |
-| **Database** | GoScale DB built-in | Prisma/Drizzle (external) |
-| **Package Manager** | gopm built-in | npm/pnpm (external) |
-| **Edge Computing** | GoScale Edge built-in | Vercel Edge only |
-| **Cross-compile** | `GOOS=linux go build` | Docker builds |
+| **Language role** | Go-native language and runtime for the web | Browser-native language and ecosystem |
+| **Team workflow** | One Go mental model across product layers | Often split across Go plus JS/TS |
+| **Deployment** | Go-shaped deliverable, simple ops story | Runtime plus package graph |
+| **Startup** | Compiled and predictable | Dynamic and runtime-driven |
+| **Memory** | Small, Go-shaped footprint | Usually larger due to runtime and tooling |
+| **Concurrency** | Goroutines and Go primitives | Event loop and async patterns |
+| **Type Safety** | Compile-time checks and generics | TypeScript layer, optional and separate |
+| **Own Language** | GoScript language, designed for Go teams | JavaScript/TypeScript already native to the browser |
+| **Reactivity** | GoScript runtime + reactive attributes | React state/hooks or other JS frameworks |
+| **Best fit** | Go teams that want the web to feel native | Teams that want direct access to the JS ecosystem |
 
 ---
 

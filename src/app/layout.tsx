@@ -14,23 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GoScript 2.0 — Full-Stack Go Web Framework",
+  title: "GoScript - Go-native alternative to JavaScript",
   description:
-    "GoScript 2.0 is a production-ready Go web framework bringing Next.js-level developer experience with compiled Go performance. Streaming SSR, file-system routing, server/client components, and more.",
+    "GoScript is a Go-native language and web application runtime for teams that want to build modern web experiences without leaving Go.",
   keywords: [
     "GoScript",
     "Go",
-    "web framework",
-    "SSR",
-    "SSG",
-    "streaming",
-    "server components",
-    "full-stack",
+    "language",
+    "JavaScript",
+    "web apps",
+    "Go native",
+    "full stack",
   ],
   authors: [{ name: "GoScript Team" }],
   openGraph: {
-    title: "GoScript 2.0",
-    description: "Full-Stack Go Web Framework with Next.js-level DX",
+    title: "GoScript",
+    description: "Go-native language for building web apps without JavaScript",
     type: "website",
   },
 };
