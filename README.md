@@ -101,6 +101,16 @@ Jetpack provides comprehensive performance monitoring and optimization tools:
 
 [Learn more about Jetpack](./README_JETPACK.md)
 
+### 7. BO: Build Out Exporter
+
+BO is a standalone build-out command for exporting a selected module, tool, or application slice into a deployable artifact.
+
+- **Executable Export**: Build a selected tool or app entrypoint into a native binary
+- **GOE Bundle**: Package the compiled binary and manifest metadata into a portable bundle
+- **Platform Scaffolds**: Generate `apk`, `ipa`, and `dmg` packaging contracts for later native adapters
+
+[Learn more about BO](./README_BO.md)
+
 ## 🚀 Getting Started
 
 ### Installation
