@@ -130,6 +130,21 @@ GoScript now carries two distinct AI-facing layers in the repository:
 [Base guidance](./base/README.md)
 [Runtime agents](./agents/README.md)
 
+### 10. Vibe Motion Foundations
+
+GoScript now includes first-pass foundations for a Go-native motion library called `vibe`, intended to grow into the GoScript answer to Motion / Framer Motion style interactions.
+
+- **Motion Primitives**: transitions, motion values, variants, gesture targets, presence tracking, and layout deltas
+- **Viewport Primitives**: scroll progress and in-view configuration for scroll-linked and scroll-triggered UI
+
+[Learn more about Vibe](./README_VIBE.md)
+
+### 11. Advanced Capability Roadmap
+
+The repo now carries a concrete checklist for the advanced platform work still needed around motion, i18n, Notion-style docs, inline tables, and file browsing.
+
+[Advanced capabilities checklist](./docs/ADVANCED_CAPABILITIES.md)
+
 ## 🚀 Getting Started
 
 ### Installation
