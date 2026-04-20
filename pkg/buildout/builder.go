@@ -38,9 +38,17 @@ func (b *Builder) Build(manifestPath string, target Target) (BuildResult, error)
 		return BuildResult{}, err
 	}
 
+	moduleRoot, err := findModuleRoot(filepath.Dir(manifestPath))
+	if err != nil {
+		return BuildResult{}, err
+	}
+
 	distDir := b.DistDir
 	if distDir == "" {
 		distDir = "dist"
+	}
+	if !filepath.IsAbs(distDir) {
+		distDir = filepath.Join(moduleRoot, distDir)
 	}
 
 	artifactRoot := manifest.PlannedOutputDir(distDir)
@@ -58,9 +66,9 @@ func (b *Builder) Build(manifestPath string, target Target) (BuildResult, error)
 
 	switch target {
 	case TargetEXE:
-		return b.buildExecutable(manifestPath, manifest, target, artifactRoot)
+		return b.buildExecutable(manifestPath, manifest, target, moduleRoot, artifactRoot)
 	case TargetGOE:
-		return b.buildGOE(manifestPath, manifest, target, artifactRoot, plan)
+		return b.buildGOE(manifestPath, manifest, target, moduleRoot, artifactRoot, plan)
 	case TargetAPK, TargetIPA, TargetDMG:
 		return b.scaffoldPlatformBundle(manifestPath, manifest, target, artifactRoot)
 	default:
@@ -68,7 +76,7 @@ func (b *Builder) Build(manifestPath string, target Target) (BuildResult, error)
 	}
 }
 
-func (b *Builder) buildExecutable(manifestPath string, manifest Manifest, target Target, artifactRoot string) (BuildResult, error) {
+func (b *Builder) buildExecutable(manifestPath string, manifest Manifest, target Target, moduleRoot, artifactRoot string) (BuildResult, error) {
 	outputPath := filepath.Join(artifactRoot, manifest.BinaryName())
 	if b.DryRun {
 		return BuildResult{
@@ -83,7 +91,7 @@ func (b *Builder) buildExecutable(manifestPath string, manifest Manifest, target
 		}, nil
 	}
 
-	if err := b.runGoBuild(filepath.Dir(manifestPath), manifest.BuildTarget(), outputPath); err != nil {
+	if err := b.runGoBuild(moduleRoot, manifest.BuildTarget(), outputPath); err != nil {
 		return BuildResult{}, err
 	}
 
@@ -103,7 +111,7 @@ func (b *Builder) buildExecutable(manifestPath string, manifest Manifest, target
 	}, nil
 }
 
-func (b *Builder) buildGOE(manifestPath string, manifest Manifest, target Target, artifactRoot string, plan BuildPlan) (BuildResult, error) {
+func (b *Builder) buildGOE(manifestPath string, manifest Manifest, target Target, moduleRoot, artifactRoot string, plan BuildPlan) (BuildResult, error) {
 	tempDir, err := os.MkdirTemp("", "bo-goe-*")
 	if err != nil {
 		return BuildResult{}, err
@@ -127,7 +135,7 @@ func (b *Builder) buildGOE(manifestPath string, manifest Manifest, target Target
 		}, nil
 	}
 
-	if err := b.runGoBuild(filepath.Dir(manifestPath), manifest.BuildTarget(), binaryPath); err != nil {
+	if err := b.runGoBuild(moduleRoot, manifest.BuildTarget(), binaryPath); err != nil {
 		return BuildResult{}, err
 	}
 

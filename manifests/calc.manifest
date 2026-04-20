@@ -1,0 +1,13 @@
+{
+  "name": "calc",
+  "module": ".",
+  "entrypoint": "./cmd/goscript",
+  "output": "calc",
+  "pages": ["/calc"],
+  "folders": ["pkg/components"],
+  "assets": ["static"],
+  "metadata": {
+    "export": "calculator-tool"
+  }
+}
+

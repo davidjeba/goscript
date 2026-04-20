@@ -36,6 +36,8 @@ bo calc.manifest - exe
 bo admin.manifest - apk
 bo admin.manifest - ipa
 bo admin.manifest - dmg
+bo manifests/admin.manifest - exe
+bo manifests/calc.manifest - goe
 ```
 
 ## Output contract
@@ -43,8 +45,8 @@ bo admin.manifest - dmg
 - `exe` builds a host executable with `go build`
 - `goe` builds a portable bundle that includes the executable plus manifest metadata
 - `apk`, `ipa`, and `dmg` currently generate scaffolds that can be wired to native packagers later
+- Manifest paths can live in a nested folder such as `manifests/`; `bo` resolves the Go module root automatically.
 
 ## Why this exists
 
 `bo` is for the ERP-style future where a developer can export just the tool they want, rather than splitting the whole system into a single monolith or forcing everything through a browser-only deployment model.
-

@@ -111,6 +111,15 @@ BO is a standalone build-out command for exporting a selected module, tool, or a
 
 [Learn more about BO](./README_BO.md)
 
+### 8. GoScript Foundations Now in Code
+
+The repo now includes first-pass foundations for the language and runtime model:
+
+- **Language Core**: module registry, `Option`/`Result`, and pattern matching helpers
+- **AI Runtime**: worker scheduler, realtime event hub, and inference router
+- **UI Foundations**: form schemas, hydration metadata, offline sync queue, and test helpers
+- **Tooling Helpers**: source and markup normalization helpers for tests and code generation
+
 ## 🚀 Getting Started
 
 ### Installation

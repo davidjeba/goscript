@@ -1,0 +1,13 @@
+{
+  "name": "admin",
+  "module": ".",
+  "entrypoint": "./cmd/server",
+  "output": "admin",
+  "pages": ["/admin", "/admin/users", "/admin/roles"],
+  "folders": ["pkg/components"],
+  "assets": ["static"],
+  "metadata": {
+    "export": "admin-tool"
+  }
+}
+
