@@ -1,7 +1,10 @@
 {
   "name": "admin",
+  "mode": "cs",
   "module": ".",
   "entrypoint": "./cmd/server",
+  "baseDir": "base",
+  "agentsDir": "agents",
   "output": "admin",
   "pages": ["/admin", "/admin/users", "/admin/roles"],
   "folders": ["pkg/components"],
@@ -10,4 +13,3 @@
     "export": "admin-tool"
   }
 }
-

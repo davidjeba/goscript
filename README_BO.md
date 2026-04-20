@@ -18,8 +18,11 @@ It is not part of `gopm`. `gopm` can stay focused on project/tooling workflows, 
 ```json
 {
   "name": "admin",
+  "mode": "cs",
   "module": ".",
   "entrypoint": "./cmd/server",
+  "baseDir": "base",
+  "agentsDir": "agents",
   "output": "admin",
   "paths": ["/admin", "/admin/users"],
   "folders": ["pkg/components/admin"],
@@ -46,6 +49,7 @@ bo manifests/calc.manifest - goe
 - `goe` builds a portable bundle that includes the executable plus manifest metadata
 - `apk`, `ipa`, and `dmg` currently generate scaffolds that can be wired to native packagers later
 - Manifest paths can live in a nested folder such as `manifests/`; `bo` resolves the Go module root automatically.
+- `mode` can be `cs` or `sw`, and manifests can point `bo` to shared `base/` guidance plus runtime `agents/` folders.
 
 ## Why this exists
 

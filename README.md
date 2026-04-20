@@ -120,6 +120,16 @@ The repo now includes first-pass foundations for the language and runtime model:
 - **UI Foundations**: form schemas, hydration metadata, offline sync queue, and test helpers
 - **Tooling Helpers**: source and markup normalization helpers for tests and code generation
 
+### 9. Guided Language Layers
+
+GoScript now carries two distinct AI-facing layers in the repository:
+
+- **`base/`**: build-time guidance for AI coders, including shared rules, `cs` and `sw` modes, project types, config packs, and security policies
+- **`agents/`**: runtime autonomous employees for applications that hire role-based agents such as `ceo`, `cfo`, or `ops`
+
+[Base guidance](./base/README.md)
+[Runtime agents](./agents/README.md)
+
 ## 🚀 Getting Started
 
 ### Installation

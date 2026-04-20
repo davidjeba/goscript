@@ -1,7 +1,10 @@
 {
   "name": "calc",
+  "mode": "cs",
   "module": ".",
   "entrypoint": "./cmd/goscript",
+  "baseDir": "base",
+  "agentsDir": "agents",
   "output": "calc",
   "pages": ["/calc"],
   "folders": ["pkg/components"],
@@ -10,4 +13,3 @@
     "export": "calculator-tool"
   }
 }
-

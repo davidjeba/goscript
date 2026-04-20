@@ -22,9 +22,12 @@ const (
 // Manifest describes the scope of an export.
 type Manifest struct {
 	Name        string            `json:"name"`
+	Mode        string            `json:"mode,omitempty"`
 	Output      string            `json:"output"`
 	Module      string            `json:"module"`
 	Entrypoint  string            `json:"entrypoint"`
+	BaseDir     string            `json:"baseDir,omitempty"`
+	AgentsDir   string            `json:"agentsDir,omitempty"`
 	Runtime     string            `json:"runtime,omitempty"`
 	Description string            `json:"description,omitempty"`
 	Pages       []string          `json:"pages,omitempty"`
@@ -32,8 +35,8 @@ type Manifest struct {
 	Folders     []string          `json:"folders,omitempty"`
 	Include     []string          `json:"include,omitempty"`
 	Assets      []string          `json:"assets,omitempty"`
-	Environment map[string]string  `json:"environment,omitempty"`
-	Metadata    map[string]string  `json:"metadata,omitempty"`
+	Environment map[string]string `json:"environment,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 	Bundle      bool              `json:"bundle,omitempty"`
 }
 
@@ -43,7 +46,7 @@ type BuildPlan struct {
 	Manifest     Manifest          `json:"manifest"`
 	Target       Target            `json:"target"`
 	BuildTarget  string            `json:"build_target"`
-	ArtifactRoot  string            `json:"artifact_root"`
+	ArtifactRoot string            `json:"artifact_root"`
 	CreatedAt    string            `json:"created_at"`
 	Notes        []string          `json:"notes,omitempty"`
 }
@@ -112,12 +115,24 @@ func (m *Manifest) Normalize(sourcePath string) {
 		m.Output = m.Name
 	}
 
+	if m.Mode == "" {
+		m.Mode = "cs"
+	}
+
 	if m.Module == "" {
 		m.Module = "."
 	}
 
 	if m.Entrypoint == "" {
 		m.Entrypoint = m.Module
+	}
+
+	if m.BaseDir == "" {
+		m.BaseDir = "base"
+	}
+
+	if m.AgentsDir == "" {
+		m.AgentsDir = "agents"
 	}
 
 	if m.Runtime == "" {
@@ -141,6 +156,10 @@ func (m Manifest) Validate() error {
 
 	if strings.TrimSpace(m.Output) == "" {
 		return fmt.Errorf("manifest output is required")
+	}
+
+	if m.Mode != "" && m.Mode != "cs" && m.Mode != "sw" {
+		return fmt.Errorf("manifest mode must be either \"cs\" or \"sw\"")
 	}
 
 	if strings.TrimSpace(m.Module) == "" && strings.TrimSpace(m.Entrypoint) == "" {

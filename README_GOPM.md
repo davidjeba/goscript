@@ -2,6 +2,10 @@
 
 GOPM is a comprehensive package manager for Go projects, with special support for GoScript ecosystem components including Gocsx, WebGPU, GoUIX, and GoScale.
 
+GoScript projects can also carry a shared `base/` guidance layer for AI coders and an `agents/` layer for runtime autonomous employees. Deployment manifests should declare `mode: "cs"` or `mode: "sw"` so build tools can understand topology before export.
+
+`gopm setup` now scaffolds that topology directly. It can create `cs` or `sw` project layouts, add the matching folder structure, and write a `manifests/<name>.manifest` file that `bo` can export later.
+
 ## Features
 
 - **Complete Package Management**: Install, update, and manage dependencies
@@ -47,6 +51,19 @@ gopm config
 
 # Set configuration
 gopm config registry https://registry.gopm.dev
+```
+
+### Setup Modes
+
+```bash
+# Scaffold a default app in client-server mode
+gopm setup my-app
+
+# Scaffold a website in client-server mode
+gopm setup --cs --type website my-site
+
+# Scaffold an ERP in swarm mode with a bo-ready manifest
+gopm setup --sw --type erp my-erp
 ```
 
 ## Gocsx CSS Framework Commands
