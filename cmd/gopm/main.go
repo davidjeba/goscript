@@ -180,7 +180,7 @@ Basic Commands:
   config        Manage configuration
   help          Show help
   auth          Authenticate with registry
-  setup         Setup project
+  setup         Setup project and generate a build manifest
   sync          Sync dependencies
   doctor        Diagnose and fix issues
   migrate       Migrate to a new version
@@ -249,4 +249,9 @@ Jetpack Performance Monitoring:
 For more information, run: gopm help [command]
 `
         fmt.Println(strings.TrimSpace(help))
+        fmt.Println()
+        fmt.Println("Setup examples:")
+        fmt.Println("  gopm setup my-project")
+        fmt.Println("  gopm setup --cs --type website my-site")
+        fmt.Println("  gopm setup --sw --type erp my-erp")
 }

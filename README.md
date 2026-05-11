@@ -101,6 +101,50 @@ Jetpack provides comprehensive performance monitoring and optimization tools:
 
 [Learn more about Jetpack](./README_JETPACK.md)
 
+### 7. BO: Build Out Exporter
+
+BO is a standalone build-out command for exporting a selected module, tool, or application slice into a deployable artifact.
+
+- **Executable Export**: Build a selected tool or app entrypoint into a native binary
+- **GOE Bundle**: Package the compiled binary and manifest metadata into a portable bundle
+- **Platform Scaffolds**: Generate `apk`, `ipa`, and `dmg` packaging contracts for later native adapters
+
+[Learn more about BO](./README_BO.md)
+
+### 8. GoScript Foundations Now in Code
+
+The repo now includes first-pass foundations for the language and runtime model:
+
+- **Language Core**: module registry, `Option`/`Result`, and pattern matching helpers
+- **AI Runtime**: worker scheduler, realtime event hub, and inference router
+- **UI Foundations**: form schemas, hydration metadata, offline sync queue, and test helpers
+- **Tooling Helpers**: source and markup normalization helpers for tests and code generation
+
+### 9. Guided Language Layers
+
+GoScript now carries two distinct AI-facing layers in the repository:
+
+- **`base/`**: build-time guidance for AI coders, including shared rules, `cs` and `sw` modes, project types, config packs, and security policies
+- **`agents/`**: runtime autonomous employees for applications that hire role-based agents such as `ceo`, `cfo`, or `ops`
+
+[Base guidance](./base/README.md)
+[Runtime agents](./agents/README.md)
+
+### 10. Vibe Motion Foundations
+
+GoScript now includes first-pass foundations for a Go-native motion library called `vibe`, intended to grow into the GoScript answer to Motion / Framer Motion style interactions.
+
+- **Motion Primitives**: transitions, motion values, variants, gesture targets, presence tracking, and layout deltas
+- **Viewport Primitives**: scroll progress and in-view configuration for scroll-linked and scroll-triggered UI
+
+[Learn more about Vibe](./README_VIBE.md)
+
+### 11. Advanced Capability Roadmap
+
+The repo now carries a concrete checklist for the advanced platform work still needed around motion, i18n, Notion-style docs, inline tables, and file browsing.
+
+[Advanced capabilities checklist](./docs/ADVANCED_CAPABILITIES.md)
+
 ## 🚀 Getting Started
 
 ### Installation

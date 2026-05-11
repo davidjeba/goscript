@@ -300,7 +300,23 @@ func (pm *PackageManager) Auth(args []string) {
 
 // Setup sets up a project
 func (pm *PackageManager) Setup(args []string) {
-	fmt.Println("Setting up project")
+	opts, err := parseSetupArgs(args)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		fmt.Println("Usage: gopm setup [--cs|--sw|--mode cs|sw] [--type website|app|erp] [project]")
+		return
+	}
+
+	manifestPath, err := pm.setupProject(opts)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Project scaffolded in %s\n", opts.ProjectDir)
+	fmt.Printf("Mode: %s\n", opts.Mode)
+	fmt.Printf("Type: %s\n", opts.Type)
+	fmt.Printf("Manifest: %s\n", manifestPath)
 }
 
 // Sync synchronizes dependencies
